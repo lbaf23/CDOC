@@ -7,13 +7,14 @@ import java.util.Date;
 
 public class Message {
 	private String messageId;
-	private String userId;
+	private String userId; //  发送的人id
+	private String objId;  //  接收的人id
 	private String messageContent;
 	private Date messageDate;
 	
-	public Message(String messageId, String userId, String messageContent, Date messageDate) {
+	public Message(String messageId, String userId, String objId, String messageContent, Date messageDate) {
 		this.messageId = messageId; this.userId = userId; this.messageContent= messageContent;
-		this.messageDate = messageDate;
+		this.messageDate = messageDate;this.objId = objId;
 	}
 	
 	/**
@@ -27,8 +28,8 @@ public class Message {
 			ArrayList<Message> m = new ArrayList<>();
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			while(rs.next()) {
-				Message mg = new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("MessageContent"),
-						rs.getDate("MessageDate"));
+				Message mg = new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("ObjId"),
+						rs.getString("MessageContent"),rs.getDate("MessageDate"));
 				m.add(mg);
 			}
 			if(m.size() == 0) {
@@ -51,8 +52,8 @@ public class Message {
 		try {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			while(rs.next()) {
-				Message mg = new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("MessageContent"),
-						rs.getDate("MessageDate"));
+				Message mg = new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("ObjId"),
+						rs.getString("MessageContent"),rs.getDate("MessageDate"));
 				m.add(mg);
 			}
 			return m;
@@ -66,7 +67,7 @@ public class Message {
 	 * @return
 	 */
 	public static boolean addMessage(Message m) {
-		String sql = "INSERT INTO Message(MessageId,UserId,MessageContent,MessageDate) VALUES "
+		String sql = "INSERT INTO Message(MessageId,UserId,ObjId,MessageContent,MessageDate) VALUES "
 				+ m.toTupleInString();
 		return Repository.getInstance().doSqlUpdateStatement(sql);
 	}
@@ -77,7 +78,7 @@ public class Message {
 	public static String getNextId() {
 		try {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement("SELECT TOP 1 MessageId FROM Message " + 
-					"ORDER BY MessageId DESC;");
+					"ORDER BY convert(int,MessageId) DESC;");
 			if(rs.next()) {
 				return String.valueOf(Integer.parseInt(rs.getString("MessageId")) + 1);
 			}
@@ -90,6 +91,6 @@ public class Message {
 	
 	
 	public String toTupleInString() {
-		return "('"+messageId+"','"+userId+"','"+messageContent+"','"+new Timestamp(messageDate.getTime())+"')";
+		return "('"+messageId+"','"+userId+"','"+objId+"','"+messageContent+"','"+new Timestamp(messageDate.getTime())+"')";
 	}
 }

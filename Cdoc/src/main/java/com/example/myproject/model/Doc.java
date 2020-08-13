@@ -6,6 +6,8 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 
+import com.example.myproject.service.FileOperate;
+
 public class Doc {
 	public static final String docPath = "DocSrc/";
 	public static final String logPath = "DocSrc/DocLog/";
@@ -14,11 +16,12 @@ public class Doc {
 	private String createrId;
 	private String docSrc;
 	private Date docCreateDate;
+	private Date docChangeDate;
 	private String docLog;
 	private boolean deleted;    //true or false
 	private Date deleteDate;
 	private String belongTo;
-	private Date docChangeDate;
+	
 	
 	public Doc(String docId,String createrId,String docSrc,Date docCreateDate,Date docChangeDate,String docLog,boolean deleted,Date deleteDate,String belongTo) {
 		this.docId=docId;
@@ -40,20 +43,20 @@ public class Doc {
 	 */
 	public static Doc findDocByDocId(String id) {
 		String sql = "SELECT * FROM Doc WHERE Deleted = 'false' AND DocId = '"+id+"'";
-		ArrayList<Doc> res = new ArrayList<>();
 		try {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
-			while(rs.next()) {
+			if(rs.next()) {
 				Doc d = new Doc(rs.getString("DocId"), rs.getString("CreaterId"), rs.getString("DocSrc"),rs.getDate("DocCreateDate"),
 						rs.getDate("DocChangeDate"),rs.getString("DocLog"), rs.getBoolean("Deleted"), rs.getDate("DeleteDate"), rs.getString("BelongTo"));
-				res.add(d);
+				rs.close();
+				return d;
+			}
+			else {
+				return null;
 			}
 		}catch(Exception e) {
 			return null;
 		}
-		if(res.size() == 0)
-			return null;
-		return res.get(0);
 	}
 	/**
 	 * 根据createrId查找全部文档
@@ -149,6 +152,7 @@ public class Doc {
 				+ "VALUES"+d.toTupleInString();
 		return Repository.getInstance().doSqlUpdateStatement(sql);
 	}
+	
 	/**
 	 * 更新文档信息
 	 * @param docId
@@ -163,7 +167,7 @@ public class Doc {
 	}
 	
 	/**
-	 * 删除文档 放入回收站
+	 * 删除文档
 	 * @param d 文档id
 	 * @return 是否成功
 	 */
@@ -175,7 +179,7 @@ public class Doc {
 	}
 	/**
 	 * 彻底删除文件
-	 * @param d 文档id
+	 * @param d
 	 * @return
 	 */
 	public static boolean delDocThorough(String d) {
@@ -184,18 +188,27 @@ public class Doc {
 		return Repository.getInstance().doSqlUpdateStatement(sql);
 	}
 	/**
-	 * 修改文件名
+	 * 恢复文档
+	 * @param docId
+	 * @return
+	 */
+	public static boolean reverseDoc(String docId) {
+		String sql = "UPDATE Doc SET Deleted = 'false' WHERE DocId = '"+docId+"'";
+		return Repository.getInstance().doSqlUpdateStatement(sql);
+	}
+	
+	/**
+	 * 修改文档名
 	 * @param d 文档
 	 * @param newName 新文档名
 	 * @return
 	 */
 	public static boolean renameDoc(Doc d,String newName) {
-		String newSrc = d.getDocPath() + "/" + newName;
+		String newSrc = d.getDocPath() +"/"+ newName;
 		String sql = "UPDATE Doc SET DocSrc = '" + newSrc + "' WHERE DocId = '"+
 						d.getDocId() + "'";
 		boolean res = true;
-		// TODO 在此处修改实际文件的文件名，并将操作结果赋给res 需要做好
-		
+		FileOperate.renameFile(d.getDocSrc(), newSrc);
 		res = res && Repository.getInstance().doSqlUpdateStatement(sql);
 		updateDocTime(d.getDocId());
 		return res;
@@ -210,11 +223,9 @@ public class Doc {
 		String sql = "UPDATE Doc SET DocChangeDate = '"+new Timestamp(new Date().getTime())+"' WHERE DocId = '"+docId+"'";
 		return Repository.getInstance().doSqlUpdateStatement(sql);
 	}
-
-	
 	
 	public String toTupleInString() {
-		return "('" +docId+"','"+createrId+"','"+docSrc+"','"+new Timestamp(docCreateDate.getTime())+"','"+new Timestamp(docChangeDate.getTime())+"','"+belongTo+"','"+deleted+"','"+new Timestamp(deleteDate.getTime())+"','"+belongTo+ "')";
+		return "('" +docId+"','"+createrId+"','"+docSrc+"','"+new Timestamp(docCreateDate.getTime())+"','"+new Timestamp(docChangeDate.getTime())+"','"+docLog+"','"+deleted+"','"+new Timestamp(deleteDate.getTime())+"','"+belongTo+ "')";
 	}
 
 	public String getDocId() {
@@ -270,7 +281,7 @@ public class Doc {
 	public static String getNextId() {
 		try {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement("SELECT TOP 1 DocId FROM Doc " + 
-					"ORDER BY DocId DESC;");
+					"ORDER BY convert(int,DocId) DESC;");
 			if(rs.next()) {
 				return String.valueOf(Integer.parseInt(rs.getString("DocId")) + 1);
 			}
@@ -303,6 +314,25 @@ public class Doc {
 
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
+	}
+	
+	/**
+	 * 计算文档src
+	 * @param docId
+	 * @param docName
+	 * @return
+	 */
+	public static String getDocSrcByDocName(String docId,String docName) {
+		return docPath+docId+"/"+docName;
+	}
+	/**
+	 * 计算文档log地址
+	 * @param docId
+	 * @param docName
+	 * @return
+	 */
+	public static String getDocLogByDocName(String docId,String docName) {
+		return logPath+docId+".log";
 	}
 	
 	/**

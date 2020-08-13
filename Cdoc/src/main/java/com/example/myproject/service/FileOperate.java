@@ -11,6 +11,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.tomcat.util.codec.binary.Base64;
 
@@ -18,7 +20,6 @@ import sun.misc.BASE64Decoder;
 
 /**
  * 一些文件的操作，根目录为src
- * @author 李柯凡
  *
  */
 public class FileOperate {
@@ -188,6 +189,13 @@ public class FileOperate {
             e.printStackTrace();
         }
         return data;
+	}
+	
+	
+	public static boolean renameFile(String path,String newPath) {
+		File f = new File(path);
+		File n = new File(newPath);
+		return f.renameTo(n);
 	}
 
 }

@@ -213,6 +213,15 @@ public class DocUser {
 		fav.add(docId);
 		return DocUser.changeUserInfo(userId, "FavouriteDoc", DocUser.listToString(fav) );
 	}
+	/**
+	 * 用户参与文件
+	 * @param userId 用户id
+	 * @param docId 文件id
+	 * @return true/false 参与结果
+	 */
+	public static boolean participateDoc(String userId,String docId,String power) {
+		return ParticipateDoc.addParticipateDoc(new ParticipateDoc(docId,userId,power));
+	}
 	
 	/**
 	 * 用户取消收藏
@@ -224,6 +233,17 @@ public class DocUser {
 		ArrayList<String> f = user.getFavouriteDoc();
 		f.remove(docId);
 		return DocUser.changeUserInfo(user.userId, "FavouriteDoc", listToString(f));
+	}
+	/**
+	 * 用户最近浏览的
+	 * @param user
+	 * @param docId
+	 * @return
+	 */
+	public static boolean setRecently(DocUser user,String docId) {
+		ArrayList<String> fav = user.getRecentlyDoc();
+		fav.add(docId);
+		return DocUser.changeUserInfo(user.userId, "RecentlyDoc", DocUser.listToString(fav) );
 	}
 	/**
 	 * 从最近浏览的目录删除

@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.myproject.model.Comment;
 import com.example.myproject.model.Doc;
 import com.example.myproject.model.DocUser;
+import com.example.myproject.model.Message;
 import com.example.myproject.model.ParticipateDoc;
 import com.example.myproject.model.Team;
 import com.example.myproject.service.DateOperate;
@@ -176,6 +178,51 @@ public class UserController {
 		r.setMessage("修改失败。");
 		return r;
 	}
+	
+	@RequestMapping(value = "/showUserImage")
+	@ResponseBody
+	@CrossOrigin
+	public Object showUserImage(@RequestParam("userId") String userId){
+		try {
+			return FileOperate.getBase64File(DocUser.findUserById(userId).getUserImage()) ;
+		} catch (Exception e) {
+			return "";
+		}
+	}
+	class UserInfoRet extends Ret{
+		String userImage;
+		String userName;
+		String userId;
+		public UserInfoRet(DocUser d) {
+			try {
+				this.userImage = FileOperate.getBase64File(d.getUserImage());
+			} catch (Exception e) {
+				this.userImage = "";
+			}
+			this.userName = d.getUserName();
+			this.userId = d.getUserId();
+		}
+		public UserInfoRet() {}
+		public String getUserImage() {
+			return userImage;
+		}
+		public void setUserImage(String userImage) {
+			this.userImage = userImage;
+		}
+		public String getUserName() {
+			return userName;
+		}
+		public void setUserName(String userName) {
+			this.userName = userName;
+		}
+		public String getUserId() {
+			return userId;
+		}
+		public void setUserId(String userId) {
+			this.userId = userId;
+		}
+		
+	}
 	/**
 	 * 用户信息页面
 	 * @param userId
@@ -187,22 +234,7 @@ public class UserController {
 	public Object showUserInfoPage(@RequestParam("userId") String userId){
 		System.out.println("Show Info.");
 		DocUser u = DocUser.findUserById(userId);
-		class UserInfoRet extends Ret{
-			String userImage;
-			String userName;
-			public String getUserImage() {
-				return userImage;
-			}
-			public void setUserImage(String userImage) {
-				this.userImage = userImage;
-			}
-			public String getUserName() {
-				return userName;
-			}
-			public void setUserName(String userName) {
-				this.userName = userName;
-			}
-		}
+		
 		UserInfoRet r = new UserInfoRet();
 		if(u == null) {
 			r.setSuccess(false);
@@ -566,6 +598,29 @@ public class UserController {
 		}
 		return r;
 	}
+	/**
+	 * 取消收藏
+	 * @param docId
+	 * @param userId
+	 * @return
+	 */
+	@RequestMapping(value = "/userCancelFavourite")
+	@ResponseBody
+	@CrossOrigin
+	public Object userCancelFavourite(@RequestParam("docId") String docId,
+			@RequestParam("userId") String userId) {
+		System.out.println(userId+" cancel Favourite "+docId);
+		Ret r = new Ret();
+		if(DocUser.cancelFavourite(DocUser.findUserById(userId), docId)) {
+			r.setSuccess(true);
+			r.setMessage("已取消收藏");
+		}
+		else {
+			r.setSuccess(false);
+			r.setMessage("操作失败");
+		}
+		return r;
+	}
 	
 	/**
 	 * 用户重命名文件
@@ -628,4 +683,145 @@ public class UserController {
 		return r;
 	}
 
+	
+	/**
+	 * 彻底删除文件
+	 * @param docId
+	 * @param userId
+	 * @return
+	 */
+	@RequestMapping(value = "/userDeleteFileThorough")
+	@ResponseBody
+	@CrossOrigin
+	public Object userDeleteFileThorough(@RequestParam("docId") String docId,
+			@RequestParam("userId") String userId) {
+		Ret r = new Ret();
+		if(Doc.delDocThorough(docId)) {
+			// 删除数据库字段
+			DocUser.cancelFavourite(DocUser.findUserById(userId), docId);
+			DocUser.cancelRecently(DocUser.findUserById(userId), docId);
+			r.setSuccess(true);
+			r.setMessage("删除成功！");
+		}
+		else {
+			r.setSuccess(false);
+			r.setMessage("删除失败！");
+		}
+		return r;
+	}
+	
+	/**
+	 * 恢复文件
+	 * @param docId
+	 * @param userId
+	 * @return
+	 */
+	@RequestMapping(value = "/userReverseFile")
+	@ResponseBody
+	@CrossOrigin
+	public Object userReverseFile(@RequestParam("docId") String docId,
+			@RequestParam("userId") String userId) {
+		Ret r = new Ret();
+		if(Doc.reverseDoc(docId)) {
+			DocUser.setRecently(DocUser.findUserById(userId), docId);
+			r.setSuccess(true);
+			r.setMessage("恢复成功！");
+		}
+		else {
+			r.setSuccess(false);
+			r.setMessage("恢复失败！");
+		}
+		return r;
+	}
+	
+	/**
+	 * 搜索用户 一次显示5个
+	 * @param value 搜索值
+	 * @param model 搜索模式 1 id 2 name
+	 * @return
+	 */
+	@RequestMapping(value = "/userSearchDocUser")
+	@ResponseBody
+	@CrossOrigin
+	public Object userSearchDocUser(@RequestParam("value") String value,
+			@RequestParam("model") int model,
+			@RequestParam("userId") String userId) {
+		ArrayList<UserInfoRet>res = new ArrayList<>();
+		int i=0;
+		for(DocUser du:UserService.searchUser(value, model, userId)) {
+			res.add(new UserInfoRet(du));
+			i++;
+			if(i>5)
+				break;
+		}
+		return res;
+	}
+	
+	/**
+	 * 创建新文件
+	 * @param userId
+	 * @param docName
+	 * @return
+	 */
+	@RequestMapping(value = "/userCreateNewFile")
+	@ResponseBody
+	@CrossOrigin
+	public Object userCreateNewFile(@RequestParam("userId") String userId,
+			@RequestParam("docName") String docName) {
+		
+		System.out.println("Create file");
+		
+		String docId = Doc.getNextId();
+		Ret r = new Ret();
+		
+		if(Doc.addDoc(new Doc(docId,userId,Doc.getDocSrcByDocName(docId, docName), new Date(),new Date(),Doc.getDocLogByDocName(docId, docName),
+				false,new Date(),"")) ) {
+			DocUser.participateDoc(userId, docId, "admin");
+			DocUser.setRecently(DocUser.findUserById(userId), docId);
+			
+			r.setSuccess(true);
+			r.setMessage("创建成功");
+			r.setResult(docId);
+		}
+		else {
+			r.setSuccess(false);
+			r.setMessage("创建失败");
+		}
+		return r;
+	}
+	
+	/**
+	 * 用户分享文件
+	 * @param userId
+	 * @param objId
+	 * @param power
+	 * @return
+	 */
+	@RequestMapping(value = "/userShareFile")
+	@ResponseBody
+	@CrossOrigin
+	public Object userShareFile(@RequestParam("userId") String userId,
+			@RequestParam("objId") String objId,
+			@RequestParam("docId") String docId,
+			@RequestParam("power") Boolean power){
+		System.out.println(userId+" share "+docId+" to "+objId);
+		Ret r = new Ret();
+		String p = "只读";
+		if(power)
+			p = "可编辑";
+		
+		if(Message.addMessage(new Message(Message.getNextId(),userId,objId,
+				userId+"分享给您一个文件，您的权限是："+p,new Date())) ) {
+			r.setSuccess(true);
+			r.setMessage("分享成功");
+		}
+		else {
+			r.setSuccess(false);
+			r.setMessage("分享失败");
+		}
+		
+		return r;
+	}
+	
+	
 }

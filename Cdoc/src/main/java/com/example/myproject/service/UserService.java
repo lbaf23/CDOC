@@ -194,5 +194,34 @@ public class UserService {
 		}
 	}
 	
+	/**
+	 * 根据字段搜索用户
+	 * @param value
+	 * @param model 1 根据id搜搜 2 根据name搜索
+	 * @param userId 排除的人id
+	 * @return
+	 */
+	public static ArrayList<DocUser> searchUser(String value,int model,String userId){
+		String sql = "SELECT * FROM DocUser";
+		if(model == 1) {
+			sql += " WHERE UserId != '"+userId+"' AND UserId LIKE '%"+value+"%'";
+		}
+		else {
+			sql += " WHERE UserId != '"+userId+"' AND UserName LIKE '%"+value+"%'";
+		}
+		ArrayList<DocUser> res = new ArrayList<>();
+		try {
+			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
+			while(rs.next()) {
+				res.add(new DocUser(rs.getString("UserId"), rs.getString("UserName"), rs.getString("UserPassword"), 
+						rs.getString("UserImage"), rs.getString("recentlyDoc"), rs.getString("FavouriteDoc")) );
+			}
+			rs.close();
+			return res;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return res;
+		}
+	}
 	
 }
