@@ -1,5 +1,6 @@
 package com.example.myproject.controller;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -10,9 +11,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.alibaba.fastjson.JSON;
 import com.example.myproject.model.Comment;
 import com.example.myproject.model.Doc;
 import com.example.myproject.model.DocUser;
+import com.example.myproject.model.EditorDoc;
 import com.example.myproject.model.Message;
 import com.example.myproject.model.ParticipateDoc;
 import com.example.myproject.model.Team;
@@ -811,7 +814,7 @@ public class UserController {
 			p = "可编辑";
 		
 		if(Message.addMessage(new Message(Message.getNextId(),userId,objId,
-				userId+"分享给您一个文件，您的权限是："+p,new Date())) ) {
+				userId+"分享给您一个文件，您的权限是："+p,new Date(), false)) ) {
 			r.setSuccess(true);
 			r.setMessage("分享成功");
 		}
@@ -822,6 +825,129 @@ public class UserController {
 		
 		return r;
 	}
+	/**
+	 * 用户打开文件
+	 * @param userId
+	 * @param docId
+	 * @return
+	 */
+	@RequestMapping(value = "/userOpenFile")
+	@ResponseBody
+	@CrossOrigin
+	public Object userOpenFile(@RequestParam("userId") String userId,
+			@RequestParam("docId") String docId) {
+		Ret r = new Ret();
+		if(EditorDoc.findEditorDocByUserIdDocId(userId, docId) == null)
+			r.setSuccess(EditorDoc.addEditorDoc(new EditorDoc(userId,docId,new Date())) );
+		r.setSuccess(true);
+		return r;
+	}
+
+	
+	
+	/**
+	 * 用户关闭文件
+	 * @param userId
+	 * @param docId
+	 * @return
+	 */
+	@RequestMapping(value = "/userCloseFile")
+	@ResponseBody
+	@CrossOrigin
+	public Object userCloseFile(@RequestParam("userId") String userId,
+			@RequestParam("docId") String docId) {
+		System.out.println(userId+" leave "+docId);
+		Ret r = new Ret();
+		r.setSuccess(EditorDoc.deleteEditorDoc(userId, docId));
+		return r;
+	}
+	
+	
+	
+	class DocData{
+		Object value;
+		Object users;
+		public Object getValue() {
+			return value;
+		}
+		public void setValue(Object value) {
+			this.value = value;
+		}
+		public Object getUsers() {
+			return users;
+		}
+		public void setUsers(Object users) {
+			this.users = users;
+		}
+	}
+	class Users{
+		String userImage;
+		String userName;
+		String userId;
+		public Users(DocUser d) {
+			try {
+				this.userImage = FileOperate.getBase64File(d.getUserImage());
+			} catch (Exception e) {
+				this.userImage = "";
+			}
+			this.userName = d.getUserName();
+			this.userId = d.getUserId();
+		}
+		public String getUserImage() {
+			return userImage;
+		}
+		public void setUserImage(String userImage) {
+			this.userImage = userImage;
+		}
+		public String getUserName() {
+			return userName;
+		}
+		public void setUserName(String userName) {
+			this.userName = userName;
+		}
+		public String getUserId() {
+			return userId;
+		}
+		public void setUserId(String userId) {
+			this.userId = userId;
+		}
+		
+	}
+	/**
+	 * 加载doc的内容等数据
+	 * @param userId
+	 * @param docId
+	 * @return
+	 */
+	@RequestMapping(value = "/getdocData")
+	@ResponseBody
+	@CrossOrigin
+	public Object getdocData(@RequestParam("userId") String userId,
+			@RequestParam("docId") String docId) {
+		System.out.println(userId+" get data "+docId);
+		Ret r = new Ret();
+		DocData dd = new DocData();
+		Doc d = Doc.findDocByDocId(docId);
+		
+		try {
+			dd.setValue(FileOperate.getFileContent(d.getDocSrc()));
+			ArrayList<Users> uu = new ArrayList<>();
+			for(DocUser du:EditorDoc.findDocUserEditorDoc(docId)) {
+				uu.add(new Users(du));
+			}
+			dd.setUsers(uu);
+			r.setResult(dd);
+			r.setSuccess(true);
+			
+			System.out.println("value :: "+dd.getValue());
+			
+			return r;
+		} catch (Exception e) {
+			r.setSuccess(false);
+			return r;
+		}
+	}
+		
 	
 	
 }

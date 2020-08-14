@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 
-import net.sf.json.JSONObject;
+//import net.sf.json.JSONObject;
 
 /*
  * 前端控制器
@@ -32,7 +32,7 @@ public class Controller {
 	 * @param cla
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
+/*	@SuppressWarnings("unchecked")
 	public static <T> T jsonToObject(String jsonStr, Class<T> cla) {
 		try{
 			Object o;
@@ -44,5 +44,6 @@ public class Controller {
 			return null;
 		}
 	}
+	*/
 
 }

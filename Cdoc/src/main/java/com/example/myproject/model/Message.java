@@ -11,15 +11,16 @@ public class Message {
 	private String objId;  //  接收的人id
 	private String messageContent;
 	private Date messageDate;
+	private boolean read;
 	
-	public Message(String messageId, String userId, String objId, String messageContent, Date messageDate) {
+	public Message(String messageId, String userId, String objId, String messageContent, Date messageDate, boolean read) {
 		this.messageId = messageId; this.userId = userId; this.messageContent= messageContent;
-		this.messageDate = messageDate;this.objId = objId;
+		this.messageDate = messageDate;this.objId = objId; this.read = read;
 	}
 	
 	/**
 	 * 根据id查找消息
-	 * @param id
+	 * @param id 消息id
 	 * @return
 	 */
 	public static Message findMessageById(String id) {
@@ -29,7 +30,7 @@ public class Message {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			while(rs.next()) {
 				Message mg = new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("ObjId"),
-						rs.getString("MessageContent"),rs.getDate("MessageDate"));
+						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("Read"));
 				m.add(mg);
 			}
 			if(m.size() == 0) {
@@ -38,6 +39,35 @@ public class Message {
 			return m.get(0);
 		} catch(Exception e) {
 			return null;
+		}
+	}
+	
+	/**
+	 * 查找某个用户的消息，分为三种状态，时间排序
+	 * @param userId 用户id
+	 * @param state 0全部 1已读 2未读 
+	 * @return
+	 */
+	public static ArrayList<Message> findNotReadMessageByUserId(String userId,int state) {
+		String sql = "SELECT * FROM Message WHERE UserId = '"+userId+"'";
+		if(state == 1) {
+			sql += " AND Read = 'true'";
+		}
+		else if(state == 2) {
+			sql += " AND Read = 'false'";
+		}
+		sql += " ORDER BY MessageDate DESC";
+		ArrayList<Message> res = new ArrayList<>();
+		try {
+			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
+			while(rs.next()) {
+				res.add(new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("ObjId"),
+						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("Read")) );
+			}
+			rs.close();
+			return res;
+		} catch(Exception e) {
+			return res;
 		}
 	}
 	
@@ -53,7 +83,7 @@ public class Message {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			while(rs.next()) {
 				Message mg = new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("ObjId"),
-						rs.getString("MessageContent"),rs.getDate("MessageDate"));
+						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("Read"));
 				m.add(mg);
 			}
 			return m;
@@ -67,7 +97,7 @@ public class Message {
 	 * @return
 	 */
 	public static boolean addMessage(Message m) {
-		String sql = "INSERT INTO Message(MessageId,UserId,ObjId,MessageContent,MessageDate) VALUES "
+		String sql = "INSERT INTO Message(MessageId,UserId,ObjId,MessageContent,MessageDate,Read) VALUES "
 				+ m.toTupleInString();
 		return Repository.getInstance().doSqlUpdateStatement(sql);
 	}
@@ -91,6 +121,6 @@ public class Message {
 	
 	
 	public String toTupleInString() {
-		return "('"+messageId+"','"+userId+"','"+objId+"','"+messageContent+"','"+new Timestamp(messageDate.getTime())+"')";
+		return "('"+messageId+"','"+userId+"','"+objId+"','"+messageContent+"','"+new Timestamp(messageDate.getTime())+"','"+read+"')";
 	}
 }
