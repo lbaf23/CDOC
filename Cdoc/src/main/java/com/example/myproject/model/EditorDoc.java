@@ -9,13 +9,14 @@ public class EditorDoc {
 	private String userId;
 	private String docId;
 	private Date editorDate;
+	private boolean isEditing;
 	
-	public EditorDoc(String userId,String docId,Date editorDate) {
+	public EditorDoc(String userId,String docId,Date editorDate,boolean isEditing) {
 		this.userId = userId; this.docId = docId;
-		this.editorDate = editorDate;
+		this.editorDate = editorDate;this.setEditing(isEditing);
 	}
 	/**
-	 * 找到某个人是否在编辑某个文档
+	 * 找到某个人是否进入某个文档
 	 * @param userId
 	 * @param docId
 	 * @return
@@ -25,7 +26,8 @@ public class EditorDoc {
 		try {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			if(rs.next()) {
-				return new EditorDoc(rs.getString("UserId"),rs.getString("DocId"),rs.getDate("EditorDate"));
+				return new EditorDoc(rs.getString("UserId"),rs.getString("DocId"),rs.getDate("EditorDate"),
+						rs.getBoolean("IsEditing"));
 			}
 			else
 				return null;
@@ -34,7 +36,52 @@ public class EditorDoc {
 		}
 	}
 	/**
-	 * 找到编辑文档的所有用户
+	 * 找到正在编辑的人id
+	 * @param docId
+	 * @return
+	 */
+	public static String findEditingUserId(String docId) {
+		String sql = "SELECT UserId FROM EditorDoc WHERE IsEditing = 'true' AND DocId = '"+docId+"'";
+		try {
+			String id = null;
+			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
+			if(rs.next()) {
+				id = rs.getString("UserId");
+			}
+			rs.close();
+			return id;
+		} catch(Exception e) {
+			return null;
+		}
+	}
+	/**
+	 * 申请编辑文档
+	 * @param userId
+	 * @param docId
+	 * @return
+	 */
+	public static boolean editingDoc(String userId,String docId) {
+		if(findEditingUserId(docId)==null) {
+			String sql = "UPDATE EditorDoc SET IsEditing = 'true' WHERE UserId = '"+userId+"' AND "
+					+ "DocId = '"+docId+"'";
+			return Repository.getInstance().doSqlUpdateStatement(sql);
+		}
+		return false;
+	}
+	/**
+	 * 用户结束编辑文档
+	 * @param userId
+	 * @param docId
+	 * @return
+	 */
+	public static boolean finishedEditing(String userId,String docId) {
+		String sql = "UPDATE EditorDoc SET IsEditing = 'false' WHERE UserId = '"+userId+"' AND "
+				+ "DocId = '"+docId+"'";
+		return Repository.getInstance().doSqlUpdateStatement(sql);
+	}
+	
+	/**
+	 * 找到进入文档的所有用户
 	 * @param docId
 	 * @return
 	 */
@@ -58,17 +105,17 @@ public class EditorDoc {
 	}
 	
 	/**
-	 * 添加新的编辑记录
+	 * 添加新的进入记录
 	 * @param e
 	 * @return
 	 */
 	public static boolean addEditorDoc(EditorDoc e) {
-		String sql = "INSERT INTO EditorDoc(UserId,DocId,EditorDate) "+
+		String sql = "INSERT INTO EditorDoc(UserId,DocId,EditorDate,IsEditing) "+
 					"VALUES"+e.toTupleInString();
 		return Repository.getInstance().doSqlUpdateStatement(sql);
 	}
 	/**
-	 * 删除编辑记录
+	 * 删除进入记录
 	 * @param userId
 	 * @param docId
 	 * @return
@@ -79,6 +126,12 @@ public class EditorDoc {
 	}
 	
 	public String toTupleInString() {
-		return "('"+userId+"','"+docId+"','"+new Timestamp(editorDate.getTime())+"')";
+		return "('"+userId+"','"+docId+"','"+new Timestamp(editorDate.getTime())+"','"+isEditing+"')";
+	}
+	public boolean isEditing() {
+		return isEditing;
+	}
+	public void setEditing(boolean isEditing) {
+		this.isEditing = isEditing;
 	}
 }

@@ -838,7 +838,7 @@ public class UserController {
 			@RequestParam("docId") String docId) {
 		Ret r = new Ret();
 		if(EditorDoc.findEditorDocByUserIdDocId(userId, docId) == null)
-			r.setSuccess(EditorDoc.addEditorDoc(new EditorDoc(userId,docId,new Date())) );
+			r.setSuccess(EditorDoc.addEditorDoc(new EditorDoc(userId,docId,new Date(),false)) );
 		r.setSuccess(true);
 		return r;
 	}
@@ -858,6 +858,7 @@ public class UserController {
 			@RequestParam("docId") String docId) {
 		System.out.println(userId+" leave "+docId);
 		Ret r = new Ret();
+		EditorDoc.finishedEditing(userId, docId);
 		r.setSuccess(EditorDoc.deleteEditorDoc(userId, docId));
 		return r;
 	}
@@ -932,12 +933,21 @@ public class UserController {
 		try {
 			dd.setValue(FileOperate.getFileContent(d.getDocSrc()));
 			ArrayList<Users> uu = new ArrayList<>();
-			for(DocUser du:EditorDoc.findDocUserEditorDoc(docId)) {
+			String id = EditorDoc.findEditingUserId(docId);
+			int index = -1;
+			ArrayList<DocUser> userlist = EditorDoc.findDocUserEditorDoc(docId);
+			for(int i=0; i<userlist.size();i++) {
+				DocUser du = userlist.get(i);
 				uu.add(new Users(du));
+				if(du.getUserId().equals(id)) {
+					index = i;
+				}
 			}
 			dd.setUsers(uu);
 			r.setResult(dd);
 			r.setSuccess(true);
+			
+			r.setMessage(String.valueOf(index));
 			
 			System.out.println("value :: "+dd.getValue());
 			
@@ -947,7 +957,90 @@ public class UserController {
 			return r;
 		}
 	}
-		
 	
+	/**
+	 * 加载使用的用户
+	 * @param userId
+	 * @param docId
+	 * @return
+	 */
+	@RequestMapping(value = "/loadEditingUsers")
+	@ResponseBody
+	@CrossOrigin
+	public Object loadEditingUsers(@RequestParam("userId") String userId,
+			@RequestParam("docId") String docId) {
+		Ret r = new Ret();
+		DocData dd = new DocData();
+		
+		try {
+			ArrayList<Users> uu = new ArrayList<>();
+			String id = EditorDoc.findEditingUserId(docId);
+			int index = -1;
+			ArrayList<DocUser> userlist = EditorDoc.findDocUserEditorDoc(docId);
+			for(int i=0; i<userlist.size();i++) {
+				DocUser du = userlist.get(i);
+				uu.add(new Users(du));
+				if(du.getUserId().equals(id)) {
+					index = i;
+				}
+			}
+			dd.setUsers(uu);
+			r.setResult(dd);
+			r.setSuccess(true);
+			
+			r.setMessage(String.valueOf(index));
+						
+			return r;
+		} catch (Exception e) {
+			r.setSuccess(false);
+			return r;
+		}
+	}
+		
+	/**
+	 * 加载doc的内容等数据
+	 * @param userId
+	 * @param docId
+	 * @return
+	 */
+	@RequestMapping(value = "/wantEditDoc")
+	@ResponseBody
+	@CrossOrigin
+	public Object wantEditDoc(@RequestParam("userId") String userId,
+			@RequestParam("docId") String docId) {
+		Ret r = new Ret();
+		if(EditorDoc.editingDoc(userId, docId)) {
+			r.setSuccess(true);
+			r.setMessage("申请成功");
+		}
+		else {
+			r.setSuccess(false);
+			r.setMessage("申请失败");
+		}
+		return r;
+	}
+	
+	/**
+	 * 用户关闭文件
+	 * @param userId
+	 * @param docId
+	 * @return
+	 */
+	@RequestMapping(value = "/userSubmitChange")
+	@ResponseBody
+	@CrossOrigin
+	public Object userSubmitChange(@RequestParam("userId") String userId,
+			@RequestParam("docId") String docId) {
+		Ret r = new Ret();
+		if(EditorDoc.finishedEditing(userId, docId)) {
+			r.setMessage("提交成功");
+			r.setSuccess(true);
+		}
+		else {
+			r.setMessage("提交失败");
+			r.setSuccess(false);
+		}
+		return r;
+	}
 	
 }
