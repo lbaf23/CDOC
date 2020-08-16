@@ -224,4 +224,67 @@ public class UserService {
 		}
 	}
 	
+	/**
+	 * 设置文件模板
+	 * @param id
+	 * @param d
+	 * @return
+	 */
+	public static boolean setDocTemplate(String id,Doc d) {
+		if(id.equals("0")) {
+			return true;
+		}
+		else if(id.equals("1")) {
+			String tp = Doc.tempPath + "t"+id+".doc";
+			try{
+				String content = FileOperate.getFileContent(tp);				
+				FileOperate.writeFile(d.getDocSrc(), content);
+				return true;
+			} catch(Exception e) {
+				return false;
+			}
+		}
+		else if(id.equals("2")) {
+			String tp = Doc.tempPath + "t"+id+".doc";
+			try{
+				String content = FileOperate.getFileContent(tp);
+				FileOperate.writeFile(d.getDocSrc(), content);
+				return true;
+			} catch(Exception e) {
+				return false;
+			}
+		}
+		else if(id.equals("3")) {
+			String tp = Doc.tempPath + "t"+id+".doc";
+			try{
+				String content = FileOperate.getFileContent(tp);				
+				FileOperate.writeFile(d.getDocSrc(), content);
+				return true;
+			} catch(Exception e) {
+				return false;
+			}
+		}
+		else if(id.equals("4")) {
+			String tp = Doc.tempPath + "t"+id+".doc";
+			try{
+				String content = FileOperate.getFileContent(tp);
+				FileOperate.writeFile(d.getDocSrc(), content);
+				return true;
+			} catch(Exception e) {
+				return false;
+			}
+		}
+		else if(id.equals("5")) {
+			String tp = Doc.tempPath + "t"+id+".doc";
+			try{
+				String content = FileOperate.getFileContent(tp);
+				FileOperate.writeFile(d.getDocSrc(), content);
+				return true;
+			} catch(Exception e) {
+				return false;
+			}
+		}
+		return false;
+	}
+	
 }

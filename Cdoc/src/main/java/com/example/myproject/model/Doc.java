@@ -11,6 +11,7 @@ import com.example.myproject.service.FileOperate;
 public class Doc {
 	public static final String docPath = "DocSrc/";
 	public static final String logPath = "DocSrc/DocLog/";
+	public static final String tempPath = "DocSrc/Template/";
 	
 	private String docId;
 	private String createrId;

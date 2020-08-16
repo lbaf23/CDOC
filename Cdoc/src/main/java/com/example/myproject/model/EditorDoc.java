@@ -109,7 +109,7 @@ public class EditorDoc {
 	public static boolean finishedEditing(String userId,String docId) {
 		String sql = "UPDATE EditorDoc SET IsEditing = 'false' WHERE UserId = '"+userId+"' AND "
 				+ "DocId = '"+docId+"'";
-		String sqll = "UPDATE EditorDoc SET HaveSubmit = 'true' WHERE DocId = '"+docId+"'";
+		String sqll = "UPDATE EditorDoc SET HaveSubmit = 'true' WHERE DocId = '"+docId+"' AND UserId != '"+userId+"'";
 		return Repository.getInstance().doSqlUpdateStatement(sql) && Repository.getInstance().doSqlUpdateStatement(sqll);
 	}
 	

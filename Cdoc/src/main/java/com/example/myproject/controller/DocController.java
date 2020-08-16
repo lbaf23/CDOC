@@ -39,7 +39,7 @@ public class DocController {
 				
 		Ret r = new Ret();
 		
-		System.out.println("save value :: "+value);
+		System.out.println("id:"+docId);
 		
 		if(value.equals("<p></p>")) {
 			System.out.println("空格");

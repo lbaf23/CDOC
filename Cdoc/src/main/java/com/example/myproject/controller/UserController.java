@@ -771,17 +771,21 @@ public class UserController {
 	@CrossOrigin
 	public Object userCreateNewFile(@RequestParam("userId") String userId,
 			@RequestParam("docName") String docName,
-			@RequestParam("teamId") String teamId) {
+			@RequestParam("teamId") String teamId,
+			@RequestParam("temp") String temp) {
 		
 		System.out.println("Create file");
 		
 		String docId = Doc.getNextId();
 		Ret r = new Ret();
-		
-		if(Doc.addDoc(new Doc(docId,userId,Doc.getDocSrcByDocName(docId, docName), new Date(),new Date(),Doc.getDocLogByDocName(docId, docName),
-				false,new Date(),teamId)) ) {
+		Doc dc = new Doc(docId,userId,Doc.getDocSrcByDocName(docId, docName), new Date(),new Date(),Doc.getDocLogByDocName(docId, docName),
+				false,new Date(),teamId);
+				
+		if(Doc.addDoc(dc) ) {
 			DocUser.participateDoc(userId, docId, "admin");
 			DocUser.setRecently(DocUser.findUserById(userId), docId);
+			
+			UserService.setDocTemplate(temp,dc);
 			
 			r.setSuccess(true);
 			r.setMessage("创建成功");
@@ -1085,5 +1089,7 @@ public class UserController {
 	public Object showUserTeams(@RequestParam("userId") String userId) {
 		return participateTeam.findUserTeams(userId, 1);
 	}
+	
+	
 	
 }
