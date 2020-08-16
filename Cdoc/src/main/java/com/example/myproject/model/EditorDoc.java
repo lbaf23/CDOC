@@ -10,10 +10,11 @@ public class EditorDoc {
 	private String docId;
 	private Date editorDate;
 	private boolean isEditing;
+	private boolean haveSubmit;
 	
-	public EditorDoc(String userId,String docId,Date editorDate,boolean isEditing) {
+	public EditorDoc(String userId,String docId,Date editorDate,boolean isEditing,boolean haveSubmit) {
 		this.userId = userId; this.docId = docId;
-		this.editorDate = editorDate;this.setEditing(isEditing);
+		this.editorDate = editorDate;this.setEditing(isEditing);this.haveSubmit = haveSubmit;
 	}
 	/**
 	 * 找到某个人是否进入某个文档
@@ -26,8 +27,10 @@ public class EditorDoc {
 		try {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			if(rs.next()) {
-				return new EditorDoc(rs.getString("UserId"),rs.getString("DocId"),rs.getDate("EditorDate"),
-						rs.getBoolean("IsEditing"));
+				EditorDoc ed = new EditorDoc(rs.getString("UserId"),rs.getString("DocId"),rs.getDate("EditorDate"),
+						rs.getBoolean("IsEditing"),rs.getBoolean("HaveSubmit"));
+				rs.close();
+				return ed;
 			}
 			else
 				return null;
@@ -35,6 +38,35 @@ public class EditorDoc {
 			return null;
 		}
 	}
+	
+	/**
+	 * 某个用户是否需要更新
+	 * @param userId
+	 * @param docId
+	 * @return
+	 */
+	public static boolean haveUpdate(String userId,String docId) {
+		String sql = "SELECT HaveSubmit FROM EditorDoc WHERE DocId = '"+docId+"' AND UserId = '"+userId+"'";
+		try {
+			boolean hav = false;
+			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
+			if(rs.next()) {
+				hav = rs.getBoolean("HaveSubmit");
+			}
+			rs.close();
+			if(hav) {
+				String sqll = "UPDATE EditorDoc SET HaveSubmit = 'false' WHERE DocId ='"+docId+"' AND UserId = '"+userId+"'";
+				Repository.getInstance().doSqlUpdateStatement(sqll);
+				return true;
+			}
+			else {
+				return false;
+			}
+		} catch(Exception e) {
+			return false;
+		}
+	}
+	
 	/**
 	 * 找到正在编辑的人id
 	 * @param docId
@@ -77,7 +109,8 @@ public class EditorDoc {
 	public static boolean finishedEditing(String userId,String docId) {
 		String sql = "UPDATE EditorDoc SET IsEditing = 'false' WHERE UserId = '"+userId+"' AND "
 				+ "DocId = '"+docId+"'";
-		return Repository.getInstance().doSqlUpdateStatement(sql);
+		String sqll = "UPDATE EditorDoc SET HaveSubmit = 'true' WHERE DocId = '"+docId+"'";
+		return Repository.getInstance().doSqlUpdateStatement(sql) && Repository.getInstance().doSqlUpdateStatement(sqll);
 	}
 	
 	/**
@@ -110,7 +143,7 @@ public class EditorDoc {
 	 * @return
 	 */
 	public static boolean addEditorDoc(EditorDoc e) {
-		String sql = "INSERT INTO EditorDoc(UserId,DocId,EditorDate,IsEditing) "+
+		String sql = "INSERT INTO EditorDoc(UserId,DocId,EditorDate,IsEditing,HaveSubmit) "+
 					"VALUES"+e.toTupleInString();
 		return Repository.getInstance().doSqlUpdateStatement(sql);
 	}
@@ -126,7 +159,7 @@ public class EditorDoc {
 	}
 	
 	public String toTupleInString() {
-		return "('"+userId+"','"+docId+"','"+new Timestamp(editorDate.getTime())+"','"+isEditing+"')";
+		return "('"+userId+"','"+docId+"','"+new Timestamp(editorDate.getTime())+"','"+isEditing+"','"+haveSubmit+"')";
 	}
 	public boolean isEditing() {
 		return isEditing;
@@ -134,4 +167,29 @@ public class EditorDoc {
 	public void setEditing(boolean isEditing) {
 		this.isEditing = isEditing;
 	}
+	public String getUserId() {
+		return userId;
+	}
+	public void setUserId(String userId) {
+		this.userId = userId;
+	}
+	public String getDocId() {
+		return docId;
+	}
+	public void setDocId(String docId) {
+		this.docId = docId;
+	}
+	public Date getEditorDate() {
+		return editorDate;
+	}
+	public void setEditorDate(Date editorDate) {
+		this.editorDate = editorDate;
+	}
+	public boolean isHaveSubmit() {
+		return haveSubmit;
+	}
+	public void setHaveSubmit(boolean haveSubmit) {
+		this.haveSubmit = haveSubmit;
+	}
+	
 }

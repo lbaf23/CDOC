@@ -28,6 +28,7 @@ public class ParticipateDoc {
 		while(rs.next()) {
 			res.add(rs.getString("UserId"));
 		}
+		rs.close();
 		if(res.size() == 0)
 			return null;
 		return res;
@@ -46,6 +47,7 @@ public class ParticipateDoc {
 		while(rs.next()) {
 			res.add(rs.getString("DocId"));
 		}
+		rs.close();
 		if(res.size() == 0)
 			return null;
 		return res;
@@ -64,6 +66,7 @@ public class ParticipateDoc {
 		while(rs.next()) {
 			res.add(rs.getString("PowerToDoc"));
 		}
+		rs.close();
 		if(res.size() == 0)
 			return null;
 		return res.get(0);

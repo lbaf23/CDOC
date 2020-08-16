@@ -2,6 +2,7 @@ package com.example.myproject.controller;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.myproject.model.Comment;
 import com.example.myproject.model.Doc;
 import com.example.myproject.model.DocUser;
+import com.example.myproject.model.Message;
 import com.example.myproject.model.ParticipateDoc;
 import com.example.myproject.service.DateOperate;
 import com.example.myproject.service.DocService;
@@ -34,8 +36,10 @@ public class DocController {
 	public Object docSave(@RequestParam("value") String value,
 			@RequestParam("userId") String userId,
 			@RequestParam("docId") String docId) {
-		
+				
 		Ret r = new Ret();
+		
+		System.out.println("save value :: "+value);
 		
 		if(value.equals("<p></p>")) {
 			System.out.println("空格");
@@ -55,7 +59,10 @@ public class DocController {
 	}
 	
 
-	
+	/**
+	 * 
+	 * 
+	 */
 
 	
 	/**
@@ -72,6 +79,7 @@ public class DocController {
 		System.out.println(userId + " savelog "+docId);
 		return DocService.saveLog(Doc.findDocByDocId(docId), userId);
 	}
+	
 	
 	/**
 	 * 用户评论
@@ -135,8 +143,8 @@ public class DocController {
 			d=DocUser.findUserById(c.get(i).getUserId());
 			res.add(new CommentForShow(FileOperate.getBase64File(d.getUserImage()),d.getUserName(),c.get(i).getContent(),d.getUserId(),c.get(i).getCommentId()));
 		}
-		System.out.println(res.size());
 		return res;
+		
 	}
 	class CommentForShow{
 		String userhead,username,comments,useremail,commentid;
@@ -178,7 +186,129 @@ public class DocController {
 			this.commentid = commentid;
 		}
 	}
-	
-
+	/**
+	 * 加载消息
+	 * @param userId
+	 * @param userPassword
+	 * @return
+	 * @throws Exception 
+	 */
+	@RequestMapping(value = "/initialMessage")
+	@ResponseBody
+	@CrossOrigin
+	public Object initialMessage(@RequestParam("userId") String userId) throws Exception {
+		System.out.println("initial Message");
+		ArrayList<Message> m1=Message.findReadMessageByObjId(userId);
+		ArrayList<Message> m2=Message.findUnReadMessageByObjId(userId);
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		ArrayList<MessageForShow> r1=new ArrayList<>();
+		ArrayList<MessageForShow> r2=new ArrayList<>();
+		MessageRet r = new MessageRet();
+		for(int i=0;i<m1.size();i++) {
+			r1.add(new MessageForShow(m1.get(i).getMessageType(),m1.get(i).getMessageId(),m1.get(i).getMessageContent(),formatter.format(m1.get(i).getMessageDate()),m1.get(i).getUserId()));
+		}
+		for(int i=0;i<m2.size();i++) {
+			r2.add(new MessageForShow(m2.get(i).getMessageType(),m2.get(i).getMessageId(),m2.get(i).getMessageContent(),formatter.format(m2.get(i).getMessageDate()),m2.get(i).getUserId()));
+		}
+		System.out.println(r1.size());
+		System.out.println(r2.size());
+		r.setResult(r1);
+		r.setResult2(r2);
+		return r;
 		
+	}
+	class MessageForShow{
+		String type,id,message,date,people;
+		MessageForShow(String a,String b,String c,String d,String e){
+			this.type=a;
+			this.id=b;
+			this.message=c;
+			this.date=d;
+			this.people=e;
+		}
+		public String getType() {
+			return type;
+		}
+		public void setType(String type) {
+			this.type = type;
+		}
+		public String getId() {
+			return id;
+		}
+		public void setId(String id) {
+			this.id = id;
+		}
+		public String getMessage() {
+			return message;
+		}
+		public void setMessage(String message) {
+			this.message = message;
+		}
+		public String getDate() {
+			return date;
+		}
+		public void setDate(String date) {
+			this.date = date;
+		}
+		public String getPeople() {
+			return people;
+		}
+		public void setPeople(String people) {
+			this.people = people;
+		}
+	}
+	class MessageRet extends Ret{
+		Object result2;
+
+		public Object getResult2() {
+			return result2;
+		}
+
+		public void setResult2(Object result2) {
+			this.result2 = result2;
+		}
+		
+	}
+	/**
+	 * 处理消息
+	 * @param userId
+	 * @param userPassword
+	 * @return
+	 * @throws Exception 
+	 */
+	@RequestMapping(value = "/manageMessage")
+	@ResponseBody
+	@CrossOrigin
+	public Object manageMessage(@RequestParam("messageId") String messageId) throws Exception {
+		System.out.println("manage Message");
+		Ret r = new Ret();
+		Message m=Message.findMessageById(messageId);
+		if(m!=null) {
+			m.setMessageRead(true);
+			Message.deleteMessage(messageId);
+			Message.addMessage(m);
+			r.setSuccess(true);
+			r.setMessage("");
+		}
+		else
+			r.setSuccess(false);
+		return r;
+	}
+	/**
+	 * 删除消息
+	 * @param userId
+	 * @param userPassword
+	 * @return
+	 * @throws Exception 
+	 */
+	@RequestMapping(value = "/deleteMessage")
+	@ResponseBody
+	@CrossOrigin
+	public Object deleteMessage(@RequestParam("messageId") String messageId) throws Exception {
+		System.out.println("delete Message");
+		Message.deleteMessage(messageId);
+		Ret r = new Ret();
+		r.setSuccess(true);
+		return r;
+	}
 }

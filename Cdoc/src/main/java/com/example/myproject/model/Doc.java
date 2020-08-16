@@ -74,6 +74,7 @@ public class Doc {
 						rs.getDate("DocChangeDate"),rs.getString("DocLog"), rs.getBoolean("Deleted"), rs.getDate("DeleteDate"), rs.getString("BelongTo"));
 				res.add(d);
 			}
+			rs.close();
 		}catch(Exception e) {
 			return res;
 		}
@@ -134,6 +135,7 @@ public class Doc {
 						rs.getDate("DocChangeDate"),rs.getString("DocLog"), rs.getBoolean("Deleted"), rs.getDate("DeleteDate"), rs.getString("BelongTo"));
 				res.add(d);
 			}
+			rs.close();
 		}catch(Exception e) {
 			return res;
 		}
@@ -283,7 +285,9 @@ public class Doc {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement("SELECT TOP 1 DocId FROM Doc " + 
 					"ORDER BY convert(int,DocId) DESC;");
 			if(rs.next()) {
-				return String.valueOf(Integer.parseInt(rs.getString("DocId")) + 1);
+				int index = Integer.parseInt(rs.getString("DocId")) + 1;
+				rs.close();
+				return String.valueOf(index);
 			}
 			return "1";
 		} catch (Exception e) {
