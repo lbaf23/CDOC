@@ -12,11 +12,15 @@ public class Message {
 	private String messageContent;
 	private Date messageDate;
 	private boolean messageRead;
-	private String messageType;
+	private String messageType;   // 1分享 2邀请 3文档被评论 4踢出团队 5拒绝邀请 6退出团队
+	private String teamId;
+	private String docId;
 	
-	public Message(String messageId, String userId, String objId, String messageContent, Date messageDate, boolean read,String messageType) {
+	public Message(String messageId, String userId, String objId, String messageContent, Date messageDate, boolean read,String messageType,
+			String teamId,String docId) {
 		this.messageId = messageId; this.userId = userId; this.messageContent= messageContent;
 		this.messageDate = messageDate;this.objId = objId; this.messageRead = read;this.messageType=messageType;
+		this.teamId = teamId; this.docId = docId;
 	}
 	
 	/**
@@ -31,7 +35,8 @@ public class Message {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			while(rs.next()) {
 				Message mg = new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("ObjId"),
-						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("MessageRead"),rs.getString("MessageType"));
+						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("MessageRead"),rs.getString("MessageType"),
+						rs.getString("TeamId"),rs.getString("DocId"));
 				m.add(mg);
 			}
 			rs.close();
@@ -64,7 +69,8 @@ public class Message {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			while(rs.next()) {
 				res.add(new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("ObjId"),
-						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("MessageRead"),rs.getString("MessageType")) );
+						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("MessageRead"),rs.getString("MessageType"),
+						rs.getString("TeamId"),rs.getString("DocId") ));
 			}
 			rs.close();
 			return res;
@@ -85,7 +91,8 @@ public class Message {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			while(rs.next()) {
 				Message mg = new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("ObjId"),
-						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("MessageRead"),rs.getString("MessageType"));
+						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("MessageRead"),rs.getString("MessageType"),
+						rs.getString("TeamId"),rs.getString("DocId"));
 				m.add(mg);
 			}
 			rs.close();
@@ -94,19 +101,33 @@ public class Message {
 			return m;
 		}
 	}
+	
+	/**
+	 * 修改列
+	 * @param messageId
+	 * @param column
+	 * @param value
+	 * @return
+	 */
+	public static boolean updateColumn(String messageId,String column,String value) {
+		String sql = "UPDATE Message SET "+column+" = '"+value+"' WHERE MessageId = '"+messageId+"'";
+		return Repository.getInstance().doSqlUpdateStatement(sql);
+	}
+	
 	/**
 	 * 根据接收者id查找消息并按时间从近到远排序
 	 * @param id
 	 * @return
 	 */
 	public static ArrayList<Message> findMessageByObjId(String id) {
-		String sql = "SELECT * FROM Message WHERE ObjId = '"+id+"' ORDER BY MessageDate DESC";
+		String sql = "SELECT * FROM Message WHERE ObjId = '"+id+"' ORDER BY MessageDate ASC";
 		ArrayList<Message> m = new ArrayList<>();
 		try {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			while(rs.next()) {
 				Message mg = new Message(rs.getString("MessageId"),rs.getString("UserId"),rs.getString("ObjId"),
-						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("MessageRead"),rs.getString("MessageType"));
+						rs.getString("MessageContent"),rs.getDate("MessageDate"),rs.getBoolean("MessageRead"),rs.getString("MessageType"),
+						rs.getString("TeamId"),rs.getString("DocId"));
 				m.add(mg);
 			}
 			rs.close();
@@ -160,7 +181,7 @@ public class Message {
 	 * @return
 	 */
 	public static boolean addMessage(Message m) {
-		String sql = "INSERT INTO Message(MessageId,UserId,ObjId,MessageContent,MessageDate,MessageRead,MessageType) VALUES "
+		String sql = "INSERT INTO Message(MessageId,UserId,ObjId,MessageContent,MessageDate,MessageRead,MessageType,TeamId,DocId) VALUES "
 				+ m.toTupleInString();
 		return Repository.getInstance().doSqlUpdateStatement(sql);
 	}
@@ -196,7 +217,23 @@ public class Message {
 	
 	
 	public String toTupleInString() {
-		return "('"+messageId+"','"+userId+"','"+objId+"','"+messageContent+"','"+new Timestamp(messageDate.getTime())+"','"+messageRead+"','"+messageType+"')";
+		String val = "('"+messageId+"','"+userId+"','"+objId+"','"+messageContent+"','"+new Timestamp(messageDate.getTime())+"','"+messageRead+"','"+messageType;
+		if(teamId==null||teamId.equals("-1")) {
+			val += "',null,";
+		}
+		else {
+			val += "','"+teamId+"',";
+		}
+		
+		if((docId==null)||docId.equals("-1")) {
+			System.out.println("1");
+			val += "null)";
+		}
+		else {
+			System.out.println("2");
+			val += "'"+docId+"')";
+		}
+		return val;
 	}
 
 	public String getMessageId() {
@@ -253,6 +290,22 @@ public class Message {
 
 	public void setMessageType(String messageType) {
 		this.messageType = messageType;
+	}
+
+	public String getTeamId() {
+		return teamId;
+	}
+
+	public void setTeamId(String teamId) {
+		this.teamId = teamId;
+	}
+
+	public String getDocId() {
+		return docId;
+	}
+
+	public void setDocId(String docId) {
+		this.docId = docId;
 	}
 	
 	

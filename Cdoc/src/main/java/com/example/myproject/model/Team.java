@@ -1,6 +1,7 @@
 package com.example.myproject.model;
 
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -57,27 +58,48 @@ public class Team {
 
     public static Team findTeamByTeamId(String id) {
         String sql = "SELECT * FROM Team WHERE TeamId = '" + id + "'";
-        ArrayList<Team> res = new ArrayList<>();
         try {
             ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
-            while (rs.next()) {
+            if (rs.next()) {
                 Team t = new Team(rs.getString("TeamId"), rs.getString("TeamName"), rs.getString("TeamLeader"), rs.getDate("TeamCreateDate"));
-                res.add(t);
+                rs.close();
+                return t;
             }
-            rs.close();
         } catch (Exception e) {
             return null;
         }
-        if (res.size() == 0)
-            return null;
-        return res.get(0);
+        return null;
     }
-
+    /**
+	 * 获取下一条id
+	 * @return
+	 */
+	public static String getNextId() {
+		try {
+			ResultSet rs = Repository.getInstance().doSqlSelectStatement("SELECT TOP 1 TeamId FROM Team " + 
+					"ORDER BY convert(int,TeamId) DESC;");
+			if(rs.next()) {
+				int index = Integer.parseInt(rs.getString("TeamId"));
+				rs.close();
+				return String.valueOf(index + 1);
+			}
+			return "1";
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "";
+		}
+	}
+    
     public static boolean changeTeamInfo(String teamId, String column, String value) {
         String sql = "UPDATE TeamId SET "+column+" = "+value+" WHERE TeamId = '"+teamId+"'";
         return Repository.getInstance().doSqlUpdateStatement(sql);
     }
 
+    /**
+     * 删除队伍
+     * @param d
+     * @return
+     */
     public static boolean delTeamThorough(String d) {
         String sql = "DELETE FROM Team WHERE TeamId ='"
                 + d+"'";
@@ -85,6 +107,6 @@ public class Team {
     }
 
     public String toTupleInString() {
-        return "('" +teamId+"','"+teamName+"','"+teamLeader+"','"+teamCreateDate+"')";
+        return "('" +teamId+"','"+teamName+"','"+teamLeader+"','"+new Timestamp(teamCreateDate.getTime())+"')";
     }
 }

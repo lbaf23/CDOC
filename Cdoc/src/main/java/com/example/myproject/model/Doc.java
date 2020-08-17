@@ -127,7 +127,7 @@ public class Doc {
 	 * @throws Exception
 	 */
 	public static ArrayList<Doc> findAllDocByBelongTo(String id) {
-		String sql = "SELECT * FROM Doc WHERE Deleted = 'false' AND BelongTo = '"+id+"'";
+		String sql = "SELECT * FROM Doc WHERE Deleted = 'false' AND BelongTo = '"+id+"' ORDER BY DocChangeDate DESC";
 		ArrayList<Doc> res = new ArrayList<>();
 		try {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);

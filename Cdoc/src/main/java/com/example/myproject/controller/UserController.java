@@ -19,10 +19,11 @@ import com.example.myproject.model.EditorDoc;
 import com.example.myproject.model.Message;
 import com.example.myproject.model.ParticipateDoc;
 import com.example.myproject.model.Team;
-import com.example.myproject.model.participateTeam;
+import com.example.myproject.model.ParticipateTeam;
 import com.example.myproject.service.DateOperate;
 import com.example.myproject.service.FileOperate;
 import com.example.myproject.service.JavaMail;
+import com.example.myproject.service.TeamService;
 import com.example.myproject.service.UserService;
 
 @RestController
@@ -795,6 +796,9 @@ public class UserController {
 			r.setSuccess(false);
 			r.setMessage("创建失败");
 		}
+		if(!teamId.equals("-1")) {
+			TeamService.addFileToTeamMembers(teamId, docId);
+		}
 		return r;
 	}
 	
@@ -819,7 +823,7 @@ public class UserController {
 			p = "可编辑";
 		
 		if(Message.addMessage(new Message(Message.getNextId(),userId,objId,
-				userId+"分享给您一个文件，您的权限是："+p,new Date(), false,"1")) ) {
+				userId+"分享给您一个文件，您的权限是："+p,new Date(), false,"1","-1",docId)) ) {
 			r.setSuccess(true);
 			r.setMessage("分享成功");
 		}
@@ -1087,7 +1091,7 @@ public class UserController {
 	@ResponseBody
 	@CrossOrigin
 	public Object showUserTeams(@RequestParam("userId") String userId) {
-		return participateTeam.findUserTeams(userId, 1);
+		return ParticipateTeam.findUserTeams(userId, 1);
 	}
 	
 	

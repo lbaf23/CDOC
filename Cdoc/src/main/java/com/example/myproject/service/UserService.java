@@ -1,5 +1,6 @@
 package com.example.myproject.service;
 
+import java.io.File;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -237,6 +238,9 @@ public class UserService {
 		else if(id.equals("1")) {
 			String tp = Doc.tempPath + "t"+id+".doc";
 			try{
+				File f = new File(d.getDocSrc());
+				if( f.exists() )
+					f.delete();
 				String content = FileOperate.getFileContent(tp);				
 				FileOperate.writeFile(d.getDocSrc(), content);
 				return true;

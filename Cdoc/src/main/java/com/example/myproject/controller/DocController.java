@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,8 @@ import com.example.myproject.model.Doc;
 import com.example.myproject.model.DocUser;
 import com.example.myproject.model.Message;
 import com.example.myproject.model.ParticipateDoc;
+import com.example.myproject.model.ParticipateTeam;
+import com.example.myproject.model.Team;
 import com.example.myproject.service.DateOperate;
 import com.example.myproject.service.DocService;
 import com.example.myproject.service.FileOperate;
@@ -36,10 +39,8 @@ public class DocController {
 	public Object docSave(@RequestParam("value") String value,
 			@RequestParam("userId") String userId,
 			@RequestParam("docId") String docId) {
-				
-		Ret r = new Ret();
 		
-		System.out.println("id:"+docId);
+		Ret r = new Ret();
 		
 		if(value.equals("<p></p>")) {
 			System.out.println("空格");
@@ -59,10 +60,7 @@ public class DocController {
 	}
 	
 
-	/**
-	 * 
-	 * 
-	 */
+	
 
 	
 	/**
@@ -97,6 +95,10 @@ public class DocController {
 		Ret r = new Ret();
 		Comment c=new Comment(Comment.getNextId(),docId,userId,content,DateOperate.nowDate());
 		Comment.addComment(c);
+		Doc d=Doc.findDocByDocId(docId);
+		String messageContent=userId+"给你的文档"+docId+"评论了";
+		Message m=new Message(Message.getNextId(),userId,d.getCreaterId(),messageContent,DateOperate.nowDate(),false,"3","-1",docId);
+		Message.addMessage(m);
 		System.out.println(c.toTupleInString());
 		r.setSuccess(true);
 		r.setMessage("评论成功！");
@@ -123,7 +125,24 @@ public class DocController {
 		r.setMessage("删除成功！");
 		return r;
 	}
-	
+	/**
+	 * 加载作者
+	 * @param docId
+	 * @return
+	 * @throws Exception 
+	 */
+	@RequestMapping(value = "/loadauthor")
+	@ResponseBody
+	@CrossOrigin
+	public Object loadauthor(@RequestParam("docId") String docId) throws Exception {
+		System.out.println("load author"+docId);
+		Ret r = new Ret();
+		Doc d=Doc.findDocByDocId(docId);
+		r.setResult(d.getCreaterId());
+		r.setSuccess(true);
+		r.setMessage("");
+		return r;
+	}
 	/**
 	 * 加载评论
 	 * @param userId
@@ -204,27 +223,57 @@ public class DocController {
 		ArrayList<MessageForShow> r1=new ArrayList<>();
 		ArrayList<MessageForShow> r2=new ArrayList<>();
 		MessageRet r = new MessageRet();
+		String p="";
 		for(int i=0;i<m1.size();i++) {
-			r1.add(new MessageForShow(m1.get(i).getMessageType(),m1.get(i).getMessageId(),m1.get(i).getMessageContent(),formatter.format(m1.get(i).getMessageDate()),m1.get(i).getUserId()));
+			if(m1.get(i).getMessageType().equals("1")) {
+				char ch[]=m1.get(i).getMessageContent().toCharArray();
+				for(int j=0;j<ch.length;j++) {
+					if(ch[j]=='：') {
+						if(ch[j+1]=='只') {
+							p="read";
+						}
+						else if(ch[j+1]=='可') {
+							p="write";
+						}
+					}
+				}
+			}
+			r1.add(new MessageForShow(m1.get(i).getMessageType(),m1.get(i).getMessageId(),m1.get(i).getMessageContent(),formatter.format(m1.get(i).getMessageDate()),m1.get(i).getUserId(),m1.get(i).getTeamId(),m1.get(i).getDocId(),p));
 		}
 		for(int i=0;i<m2.size();i++) {
-			r2.add(new MessageForShow(m2.get(i).getMessageType(),m2.get(i).getMessageId(),m2.get(i).getMessageContent(),formatter.format(m2.get(i).getMessageDate()),m2.get(i).getUserId()));
+			if(m2.get(i).getMessageType().equals("1")) {
+				char ch[]=m2.get(i).getMessageContent().toCharArray();
+				for(int j=0;j<ch.length;j++) {
+					if(ch[j]=='：') {
+						if(ch[j+1]=='只') {
+							p="read";
+						}
+						else if(ch[j+1]=='可') {
+							p="write";
+						}
+					}
+				}
+			}
+			
+			r2.add(new MessageForShow(m2.get(i).getMessageType(),m2.get(i).getMessageId(),m2.get(i).getMessageContent(),formatter.format(m2.get(i).getMessageDate()),m2.get(i).getUserId(),m2.get(i).getTeamId(),m2.get(i).getDocId(),p));
 		}
-		System.out.println(r1.size());
-		System.out.println(r2.size());
+		
 		r.setResult(r1);
 		r.setResult2(r2);
 		return r;
 		
 	}
 	class MessageForShow{
-		String type,id,message,date,people;
-		MessageForShow(String a,String b,String c,String d,String e){
+		String type,id,message,date,people,teamId,docId,power;
+		MessageForShow(String a,String b,String c,String d,String e,String f,String g,String h){
 			this.type=a;
 			this.id=b;
 			this.message=c;
 			this.date=d;
 			this.people=e;
+			this.teamId=f;
+			this.docId=g;
+			this.power=h;
 		}
 		public String getType() {
 			return type;
@@ -256,6 +305,26 @@ public class DocController {
 		public void setPeople(String people) {
 			this.people = people;
 		}
+		public String getTeamId() {
+			return teamId;
+		}
+		public void setTeamId(String teamId) {
+			this.teamId = teamId;
+		}
+		public String getDocId() {
+			return docId;
+		}
+		public void setDocId(String docId) {
+			this.docId = docId;
+		}
+		public String getPower() {
+			return power;
+		}
+		public void setPower(String power) {
+			this.power = power;
+		}
+		
+		
 	}
 	class MessageRet extends Ret{
 		Object result2;
@@ -283,21 +352,81 @@ public class DocController {
 		System.out.println("manage Message");
 		Ret r = new Ret();
 		Message m=Message.findMessageById(messageId);
+		String p="";
+		System.out.println(messageId);
 		if(m!=null) {
-			m.setMessageRead(true);
-			Message.deleteMessage(messageId);
+			Message.updateColumn(messageId, "MessageRead", "true");
 			Message.addMessage(m);
 			r.setSuccess(true);
 			r.setMessage("");
+			if(m.getMessageType().equals("1")) {
+				char ch[]=m.getMessageContent().toCharArray();
+				for(int i=0;i<ch.length;i++) {
+					if(ch[i]=='：') {
+						if(ch[i+1]=='只') {
+							p="read";
+						}
+						else if(ch[i+1]=='可') {
+							p="write";
+						}
+					}
+				}
+			ParticipateDoc pt=new ParticipateDoc(m.getDocId(),m.getObjId(),p);
+			System.out.println(m.getDocId()+"   "+m.getObjId());
+			String ss=ParticipateDoc.findPowerToDocById(m.getObjId(),m.getDocId());
+			if(ss==null) {
+				ParticipateDoc.addParticipateDoc(pt);
+			}
+			}	
 		}
 		else
 			r.setSuccess(false);
 		return r;
 	}
 	/**
+	 * 同意邀请
+	 * @param messageId
+	 * @return
+	 * @throws Exception 
+	 */
+	@RequestMapping(value = "/acceptInvite")
+	@ResponseBody
+	@CrossOrigin
+	public Object acceptInvite(@RequestParam("messageId") String messageId) throws Exception {
+		System.out.println("accept Invite");
+		Message m=Message.findMessageById(messageId);
+		String content=m.getObjId()+"同意加入"+m.getTeamId()+"团队";
+		Message m1=new Message(Message.getNextId(),m.getObjId(),m.getUserId(),content,DateOperate.nowDate(),false,"3",m.getTeamId(),m.getDocId());
+		Message.addMessage(m1);
+		
+		ParticipateTeam.addParticipateTeam( new ParticipateTeam(m1.getMessageId(),m1.getObjId(), 
+				"none", new Date(), false, "write") );
+		Ret r = new Ret();
+		r.setSuccess(true);
+		return r;
+	}
+	/**
+	 * 拒绝邀请
+	 * @param messageId
+	 * @return
+	 * @throws Exception 
+	 */
+	@RequestMapping(value = "/rejectInvite")
+	@ResponseBody
+	@CrossOrigin
+	public Object rejectInvite(@RequestParam("messageId") String messageId) throws Exception {
+		System.out.println("reject Invite");
+		Message m=Message.findMessageById(messageId);
+		String content=m.getObjId()+"拒绝加入"+m.getTeamId()+"团队";
+		Message m1=new Message(Message.getNextId(),m.getObjId(),m.getUserId(),content,DateOperate.nowDate(),false,"3",m.getTeamId(),m.getDocId());
+		Message.addMessage(m1);
+		Ret r = new Ret();
+		r.setSuccess(true);
+		return r;
+	}
+	/**
 	 * 删除消息
-	 * @param userId
-	 * @param userPassword
+	 * @param messageId
 	 * @return
 	 * @throws Exception 
 	 */
@@ -311,4 +440,27 @@ public class DocController {
 		r.setSuccess(true);
 		return r;
 	}
+	/**
+	 * 创建团队
+	 * @param userId
+	 * @return
+	 */
+	@RequestMapping(value = "/createTeam")
+	@ResponseBody
+	@CrossOrigin
+	public Object createTeam(@RequestParam("teamName") String teamName,
+			@RequestParam("userId") String userId) {
+		System.out.println("create Team"+teamName+userId);
+		String id=Team.getNextId();
+		Team t=new Team(id,teamName,userId,DateOperate.nowDate());
+		Team.addTeam(t);
+		ParticipateTeam p=new ParticipateTeam(id,userId,"owner",DateOperate.nowDate(),true);
+		ParticipateTeam.addParticipateTeam(p);
+		Ret r = new Ret();
+		r.setResult(id);
+		System.out.println(id);
+		r.setSuccess(true);
+		return r;
+	}
+	
 }
