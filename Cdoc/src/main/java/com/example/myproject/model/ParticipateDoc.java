@@ -101,9 +101,12 @@ public class ParticipateDoc {
 	 * @return 是否成功
 	 */
 	public static boolean addParticipateDoc(ParticipateDoc p) {
-		String sql = "INSERT INTO ParticipateDoc(DocId,UserId,PowerToDoc) " 
-				+ "VALUES"+p.toTupleInString();
-		return Repository.getInstance().doSqlUpdateStatement(sql);
+		if(ParticipateDoc.findParticipateByDocIdUserId(p.getUserId(), p.getDocId())==null) {
+			String sql = "INSERT INTO ParticipateDoc(DocId,UserId,PowerToDoc) " 
+					+ "VALUES"+p.toTupleInString();
+			return Repository.getInstance().doSqlUpdateStatement(sql);
+		}
+		return true;
 	}
 	
 	/**

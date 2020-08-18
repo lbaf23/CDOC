@@ -210,6 +210,8 @@ public class DocUser {
 	 */
 	public boolean setFavourite(String docId) {
 		ArrayList<String> fav = DocUser.findUserById(userId).getFavouriteDoc();
+		if(fav.contains(docId))
+			return true;
 		fav.add(docId);
 		return DocUser.changeUserInfo(userId, "FavouriteDoc", DocUser.listToString(fav) );
 	}
@@ -242,6 +244,8 @@ public class DocUser {
 	 */
 	public static boolean setRecently(DocUser user,String docId) {
 		ArrayList<String> fav = user.getRecentlyDoc();
+		if(fav.contains(docId))
+			fav.remove(docId);
 		fav.add(docId);
 		return DocUser.changeUserInfo(user.userId, "RecentlyDoc", DocUser.listToString(fav) );
 	}

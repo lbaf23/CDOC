@@ -20,7 +20,7 @@ public class JavaMail {
 	 */
 	public static void sendMail(String email,String title,String content) throws Exception {
 		// 收件人电子邮箱
-		String from = "3343262025@qq.com";
+		String from = "@qq.com";
 
 		// 指定发送邮件的主机为 smtp.qq.com
 		String host = "smtp.qq.com";  //QQ 邮件服务器
@@ -39,7 +39,7 @@ public class JavaMail {
 		// 获取默认session对象
 		Session session = Session.getDefaultInstance(properties,new Authenticator(){
 			public PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication("3343262025@qq.com", "uaidcxmobrvochdi"); //发件人邮件用户名、密码
+				return new PasswordAuthentication("@qq.com", ""); //发件人邮件用户名、密码
 			}
 		});
 

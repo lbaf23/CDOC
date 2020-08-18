@@ -81,15 +81,21 @@ public class TeamController {
 			this.participateDate = p.getParticipateDate();
 			if(p.getPowerToTeam().equals("owner")) {
 				this.powerToTeam = "创建者";
-				this.textPower = "可管理";
 			}
 			else if(p.getPowerToTeam().equals("admin")) {
 				this.powerToTeam = "管理员";
-				this.textPower = "可管理";
 			}
 			else {
 				this.powerToTeam = "成员";
+			}
+			if(p.getPowerToFile().equals("admin")) {
+				this.textPower = "可管理";
+			}
+			else if(p.getPowerToFile().equals("write")) {
 				this.textPower = "可编辑";
+			}
+			else {
+				this.textPower = "只读";
 			}
 			
 		}
@@ -129,11 +135,15 @@ public class TeamController {
 		String textName;
 		String founder;
 		Date updateDate;
+		String userId;
+		String docId;
 		public DocForShow(Doc d) {
 			this.textName = d.getDocName();
 			DocUser u = DocUser.findUserById(d.getCreaterId());
 			this.founder = u.getUserName();
 			this.updateDate = d.getDocChangeDate();
+			this.userId = d.getCreaterId();
+			this.docId = d.getDocId();
 		}
 		public String getTextName() {
 			return textName;
@@ -152,6 +162,18 @@ public class TeamController {
 		}
 		public void setUpdateDate(Date updateDate) {
 			this.updateDate = updateDate;
+		}
+		public String getUserId() {
+			return userId;
+		}
+		public void setUserId(String userId) {
+			this.userId = userId;
+		}
+		public String getDocId() {
+			return docId;
+		}
+		public void setDocId(String docId) {
+			this.docId = docId;
 		}
 		
 	}
@@ -206,23 +228,24 @@ public class TeamController {
     @ResponseBody
     @CrossOrigin
     public Object showTeamInfo(@RequestParam("teamId") String teamId,
-                             @RequestParam("userId") String userId){
-		
-		System.out.println("t:"+teamId+",u:"+userId);
-		
+                             @RequestParam("userId") String userId){		
 		Ret r = new Ret();
 		Team team = Team.findTeamByTeamId(teamId);
 		TeamInfo t = new TeamInfo();
+		if(team==null)
+			return r;
 		t.setTeamData(new TeamForShow(team));
 		ArrayList<Doc> fileList = TeamService.getTeamFiles(teamId);
 		ArrayList<DocForShow> teamFile = new ArrayList<>();
 		for(Doc dc:fileList) {
 			teamFile.add(new DocForShow(dc));
 		}
-		System.out.println(teamFile);
+				
 		t.setTeamFile(teamFile);
-		ParticipateTeam pt = ParticipateTeam.findTeamByUserId(userId, teamId);		
-		t.setUserTeamPower(pt.getPowerToTeam());
+		ParticipateTeam pt = ParticipateTeam.findTeamByUserId(userId, teamId);
+		if(pt!=null) {
+			t.setUserTeamPower(pt.getPowerToTeam());
+		}
 		
 		ArrayList<DocUser> members = TeamService.getTeamMembers(teamId);
 		ArrayList<MemberForShow> mlist = new ArrayList<>();
@@ -239,38 +262,6 @@ public class TeamController {
 		return r;
 	}
 	
-    /**
-     * 创建团队
-     * @param teamName
-     * @param userId
-     * @return
-     */
-    @RequestMapping(value = "/CreateTeam")
-    @ResponseBody
-    @CrossOrigin
-    public Object CreateTeam(@RequestParam("teamName") String teamName,
-                             @RequestParam("userId") String userId){
-        Ret r = new Ret();
-        Random random = new Random();
-        String teamId = "";
-        do{
-            teamId = null;
-            for(int i = 0; i < 7; ++ i){
-                teamId += random.nextInt(10);
-            }
-        }while(Team.findTeamByTeamId(teamId) != null);
-        LocalDate localDate = LocalDate.now();
-        Date date = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-        if(Team.addTeam(new Team(teamId, teamName, userId, date)) &&
-                ParticipateTeam.addParticipateTeam(new ParticipateTeam(teamId, userId, "owner", date, true)) ){
-            r.setSuccess(true);
-            r.setMessage("注册成功。");
-            return r;
-        }
-        r.setSuccess(false);
-        r.setMessage("注册失败。");
-        return r;
-    }
     
     
 
@@ -294,7 +285,7 @@ public class TeamController {
             r.setMessage("用户不存在");
             return r;
         }
-        ParticipateTeam d = ParticipateTeam.findTeamByUserId(userId, teamId);
+        ParticipateTeam d = ParticipateTeam.findTeamByUserId(objId, teamId);
         if(d != null){
             r.setSuccess(false);
             r.setMessage("成员已在团队中。");
@@ -341,7 +332,7 @@ public class TeamController {
 
     /**
      * 修改团队权限
-     * @param type
+     * @param type 1 admin 2 none
      * @return
      */
     @RequestMapping(value = "/changeTeamPower")
@@ -353,7 +344,8 @@ public class TeamController {
         Ret r = new Ret();
         
         if(type.equals(1)){
-        	if(ParticipateTeam.changeParticipateInfo(userId, teamId, "PowerToTeam", "admin")) {
+        	if(ParticipateTeam.changeParticipateInfo(userId, teamId, "PowerToTeam", "admin") && 
+        			ParticipateTeam.changeParticipateInfo(userId, teamId, "PowerToFile", "admin") ) {
         		r.setMessage("修改成功");
         		r.setSuccess(true);
         	}
@@ -363,7 +355,8 @@ public class TeamController {
         	}
         }
         else{
-        	if(ParticipateTeam.changeParticipateInfo(userId, teamId, "PowerToTeam", "none")) {
+        	if(ParticipateTeam.changeParticipateInfo(userId, teamId, "PowerToTeam", "none") && 
+        			ParticipateTeam.changeParticipateInfo(userId, teamId, "PowerToFile", "read")) {
         		r.setMessage("修改成功");
         		r.setSuccess(true);
         	}
@@ -377,7 +370,7 @@ public class TeamController {
 
     /**
      * 修改文档权限
-     * @param type 1 admin 2 none
+     * @param type 1 read 2 write
      * @param userId
      * @param teamId
      * @return
@@ -432,13 +425,14 @@ public class TeamController {
     @CrossOrigin
     public Ret DelParticipateTeam(@RequestParam("teamId") String teamId,
                                   @RequestParam(value="userId",required=false) String userId,
-                                  @RequestParam("objId") String objId) {
+                                  @RequestParam("objId") String objId,
+                                  @RequestParam(value="type",required=false) String type) {
         Ret r = new Ret();
         Team t = Team.findTeamByTeamId(teamId);
-        if(userId==null) {
+        if(type!=null) {
         	if(ParticipateTeam.delParticipationThorough(objId, teamId)) {
-        		Message.addMessage(new Message(Message.getNextId(),objId,objId,
-        				userId+"已退出团队："+t.getTeamName(),new Date(), false,"6",teamId,"-1") );
+        		Message.addMessage(new Message(Message.getNextId(),"管理员",objId,
+        				objId+"已退出团队："+t.getTeamName(),new Date(), false,"6",teamId,"-1") );
         		r.setSuccess(true);
         		r.setMessage("退出成功");
         	}

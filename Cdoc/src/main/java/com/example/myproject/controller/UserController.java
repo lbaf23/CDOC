@@ -237,7 +237,6 @@ public class UserController {
 	@ResponseBody
 	@CrossOrigin
 	public Object showUserInfoPage(@RequestParam("userId") String userId){
-		System.out.println("Show Info.");
 		DocUser u = DocUser.findUserById(userId);
 		
 		UserInfoRet r = new UserInfoRet();
@@ -285,7 +284,6 @@ public class UserController {
 				r.setSuccess(DocUser.changeUserInfo(userId, "UserPassword", newValue));
 			}
 		}
-		System.out.println(r.isSuccess());
 		return r;
 	}
 	
@@ -464,30 +462,34 @@ public class UserController {
 	public Object getUserFavouriteDoc(@RequestParam("userId") String userId,
 			@RequestParam("type") Integer type){
 		ArrayList<Document> res = new ArrayList<>();
-		ArrayList<Doc> ds =  UserService.getUserFavouriteDoc(DocUser.findUserById(userId), type, true);		
-		if(ds.size()==0)
-			return res;
-		Date lastDate;
-		if(type.equals(1))
-			lastDate = ds.get(0).getDocChangeDate();
-		else
-			lastDate = ds.get(0).getDocCreateDate();
-		ArrayList<Doc> dlist = new ArrayList<>();
-		for(Doc d:ds) {
-			Date l;
+		try {
+			ArrayList<Doc> ds =  UserService.getUserFavouriteDoc(DocUser.findUserById(userId), type, true);		
+			if(ds.size()==0)
+				return res;
+			Date lastDate;
 			if(type.equals(1))
-				l = d.getDocChangeDate();
+				lastDate = ds.get(0).getDocChangeDate();
 			else
-				l = d.getDocCreateDate();
-			if(l.compareTo(lastDate) < 0) {
-				res.add(new Document(lastDate,dlist,userId) );
-				dlist.clear();
-				lastDate = l;
+				lastDate = ds.get(0).getDocCreateDate();
+			ArrayList<Doc> dlist = new ArrayList<>();
+			for(Doc d:ds) {
+				Date l;
+				if(type.equals(1))
+					l = d.getDocChangeDate();
+				else
+					l = d.getDocCreateDate();
+				if(l.compareTo(lastDate) < 0) {
+					res.add(new Document(lastDate,dlist,userId) );
+					dlist.clear();
+					lastDate = l;
+				}
+				dlist.add(d);
 			}
-			dlist.add(d);
+			res.add(new Document(lastDate,dlist,userId) );
+			return res;
+		} catch(Exception e) {
+			return res;
 		}
-		res.add(new Document(lastDate,dlist,userId) );
-		return res;
 	}
 	/**
 	 * 回收站文件
@@ -613,7 +615,6 @@ public class UserController {
 	@CrossOrigin
 	public Object userCancelFavourite(@RequestParam("docId") String docId,
 			@RequestParam("userId") String userId) {
-		System.out.println(userId+" cancel Favourite "+docId);
 		Ret r = new Ret();
 		if(DocUser.cancelFavourite(DocUser.findUserById(userId), docId)) {
 			r.setSuccess(true);
@@ -639,6 +640,7 @@ public class UserController {
 	public Object userRenameFile(@RequestParam("docId") String docId,
 			@RequestParam("userId") String userId,
 			@RequestParam("newName") String newName) {
+				
 		Doc d = Doc.findDocByDocId(docId);
 		Ret r = new Ret();
 		if(d.getCreaterId().equals(userId)) {
@@ -676,7 +678,14 @@ public class UserController {
 			@RequestParam("userId") String userId) {
 		Doc d = Doc.findDocByDocId(docId);
 		Ret r = new Ret();
-		if(UserService.userDeleteDoc(DocUser.findUserById(userId), d)) {
+		boolean res = true;
+		if(!d.getCreaterId().equals(userId)) { // 团队删除
+			res = TeamService.deleteFileFromTeam(d);
+		}
+		else {
+			res = UserService.userDeleteDoc(DocUser.findUserById(userId), d);
+		}
+		if(res) {
 			r.setSuccess(true);
 			r.setMessage("删除成功");
 		}
@@ -774,9 +783,7 @@ public class UserController {
 			@RequestParam("docName") String docName,
 			@RequestParam("teamId") String teamId,
 			@RequestParam("temp") String temp) {
-		
-		System.out.println("Create file");
-		
+				
 		String docId = Doc.getNextId();
 		Ret r = new Ret();
 		Doc dc = new Doc(docId,userId,Doc.getDocSrcByDocName(docId, docName), new Date(),new Date(),Doc.getDocLogByDocName(docId, docName),
@@ -796,9 +803,9 @@ public class UserController {
 			r.setSuccess(false);
 			r.setMessage("创建失败");
 		}
-		if(!teamId.equals("-1")) {
+/*		if(!teamId.equals("-1")) {
 			TeamService.addFileToTeamMembers(teamId, docId);
-		}
+		}*/
 		return r;
 	}
 	
@@ -816,7 +823,6 @@ public class UserController {
 			@RequestParam("objId") String objId,
 			@RequestParam("docId") String docId,
 			@RequestParam("power") Boolean power){
-		System.out.println(userId+" share "+docId+" to "+objId);
 		Ret r = new Ret();
 		String p = "只读";
 		if(power)
@@ -865,10 +871,13 @@ public class UserController {
 	@CrossOrigin
 	public Object userCloseFile(@RequestParam("userId") String userId,
 			@RequestParam("docId") String docId) {
-		System.out.println(userId+" leave "+docId);
 		Ret r = new Ret();
-		EditorDoc.finishedEditing(userId, docId);
-		r.setSuccess(EditorDoc.deleteEditorDoc(userId, docId));
+		try {
+			EditorDoc.finishedEditing(userId, docId);
+			r.setSuccess(EditorDoc.deleteEditorDoc(userId, docId));
+		} catch(Exception e) {
+			return r;
+		}
 		return r;
 	}
 	
@@ -934,13 +943,12 @@ public class UserController {
 	@CrossOrigin
 	public Object getdocData(@RequestParam("userId") String userId,
 			@RequestParam("docId") String docId) {
-		System.out.println(userId+" get data "+docId);
 		Ret r = new Ret();
 		DocData dd = new DocData();
 		Doc d = Doc.findDocByDocId(docId);
 		
 		try {
-			dd.setValue(FileOperate.getFileContent(d.getDocSrc()));
+			dd.setValue(FileOperate.getFileContent(d.getDocSrc(),false));
 			ArrayList<Users> uu = new ArrayList<>();
 			String id = EditorDoc.findEditingUserId(docId);
 			int index = -1;
@@ -982,7 +990,7 @@ public class UserController {
 		
 		try {
 			if(EditorDoc.haveUpdate(userId, docId)) {
-				dd.setValue(FileOperate.getFileContent(d.getDocSrc()));
+				dd.setValue(FileOperate.getFileContent(d.getDocSrc(),false));
 				r.setResult(dd);
 				r.setSuccess(true);
 				return r;

@@ -19,14 +19,6 @@ public class ParticipateTeam {
     private boolean isLeader;
     private String powerToFile;
 
-    public ParticipateTeam(String teamId, String userId, String powerToTeam, Date participateDate, boolean isLeader){
-        this.isLeader = isLeader;
-        this.participateDate = participateDate;
-        this.powerToTeam = powerToTeam;
-        this.teamId = teamId;
-        this.userId = userId;
-        this.powerToFile = "";
-    }
     public ParticipateTeam(String teamId, String userId, String powerToTeam, Date participateDate, boolean isLeader, String powerToFile){
         this.isLeader = isLeader;
         this.participateDate = participateDate;
@@ -96,7 +88,8 @@ public class ParticipateTeam {
         try {
             ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
             if (rs.next()) {
-            	ParticipateTeam res = new ParticipateTeam(rs.getString("TeamId"),rs.getString("UserId"), rs.getString("PowerToTeam"), rs.getDate("ParticipateDate"), rs.getBoolean("IsLeader"));
+            	ParticipateTeam res = new ParticipateTeam(rs.getString("TeamId"),rs.getString("UserId"), 
+            			rs.getString("PowerToTeam"), rs.getDate("ParticipateDate"), rs.getBoolean("IsLeader"),rs.getString("PowerToFile"));
                 rs.close();
                 return res;
             }
@@ -136,7 +129,6 @@ public class ParticipateTeam {
                 Team t = new Team(rs.getString("TeamId"),rs.getString("TeamName"), rs.getString("TeamLeader"), rs.getDate("TeamCreateDate"));
                 res.add(t);
             }
-            System.out.println("res"+res.size());
             rs.close();
         } catch (Exception e) {
             return res;
@@ -156,7 +148,7 @@ public class ParticipateTeam {
             ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
             while (rs.next()) {
                 ParticipateTeam p = new ParticipateTeam(rs.getString("TeamId"),rs.getString("UserId"), 
-                		rs.getString("PowerToTeam"), rs.getDate("ParticipateTime"), rs.getBoolean("IsLeader"));
+                		rs.getString("PowerToTeam"), rs.getDate("ParticipateTime"), rs.getBoolean("IsLeader"),rs.getString("PowerToFile"));
                 res.add(p);
             }
             rs.close();

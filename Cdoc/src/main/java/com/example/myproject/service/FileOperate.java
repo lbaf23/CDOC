@@ -30,16 +30,22 @@ public class FileOperate {
 	 * @return 文件内容
 	 * @throws Exception 文件不存在抛出异常
 	 */
-	public static String getFileContent(String filePath) throws Exception {
+	public static String getFileContent(String filePath,boolean withLines) throws Exception {
 		StringBuilder content = new StringBuilder();
 		String line = "";
+		int num = 0;
 		File f = new File(filePath);
 		BufferedReader reader = new BufferedReader(new FileReader(f));
 		while ((line = reader.readLine()) != null) {
 			content.append(line);
+			content.append("\n");
+			num ++;
 		}
 		reader.close();
-		return content.toString();
+		if(withLines)
+			return num+":"+content.toString();
+		else
+			return content.toString();
 	}
 
 	/**

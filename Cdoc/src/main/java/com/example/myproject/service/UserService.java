@@ -20,7 +20,7 @@ public class UserService {
 	 * @param desc 是否按照时间近的到远的排序 true 从近到远 false 从远到近
 	 * @return 文件列表
 	 */
-	public static ArrayList<Doc> getUserFavouriteDoc(DocUser user,int order,boolean desc){
+	public static ArrayList<Doc> getUserFavouriteDoc(DocUser user,int order,boolean desc) throws Exception {
 		ArrayList<Doc> res = new ArrayList<>();
 		ArrayList<String> userFavourite = user.getFavouriteDoc();
 		for(String str:userFavourite) {
@@ -241,7 +241,7 @@ public class UserService {
 				File f = new File(d.getDocSrc());
 				if( f.exists() )
 					f.delete();
-				String content = FileOperate.getFileContent(tp);				
+				String content = FileOperate.getFileContent(tp,false);				
 				FileOperate.writeFile(d.getDocSrc(), content);
 				return true;
 			} catch(Exception e) {
@@ -251,7 +251,7 @@ public class UserService {
 		else if(id.equals("2")) {
 			String tp = Doc.tempPath + "t"+id+".doc";
 			try{
-				String content = FileOperate.getFileContent(tp);
+				String content = FileOperate.getFileContent(tp,false);
 				FileOperate.writeFile(d.getDocSrc(), content);
 				return true;
 			} catch(Exception e) {
@@ -261,7 +261,7 @@ public class UserService {
 		else if(id.equals("3")) {
 			String tp = Doc.tempPath + "t"+id+".doc";
 			try{
-				String content = FileOperate.getFileContent(tp);				
+				String content = FileOperate.getFileContent(tp,false);				
 				FileOperate.writeFile(d.getDocSrc(), content);
 				return true;
 			} catch(Exception e) {
@@ -271,7 +271,7 @@ public class UserService {
 		else if(id.equals("4")) {
 			String tp = Doc.tempPath + "t"+id+".doc";
 			try{
-				String content = FileOperate.getFileContent(tp);
+				String content = FileOperate.getFileContent(tp,false);
 				FileOperate.writeFile(d.getDocSrc(), content);
 				return true;
 			} catch(Exception e) {
@@ -281,7 +281,7 @@ public class UserService {
 		else if(id.equals("5")) {
 			String tp = Doc.tempPath + "t"+id+".doc";
 			try{
-				String content = FileOperate.getFileContent(tp);
+				String content = FileOperate.getFileContent(tp,false);
 				FileOperate.writeFile(d.getDocSrc(), content);
 				return true;
 			} catch(Exception e) {

@@ -226,11 +226,9 @@ public class Message {
 		}
 		
 		if((docId==null)||docId.equals("-1")) {
-			System.out.println("1");
 			val += "null)";
 		}
 		else {
-			System.out.println("2");
 			val += "'"+docId+"')";
 		}
 		return val;
