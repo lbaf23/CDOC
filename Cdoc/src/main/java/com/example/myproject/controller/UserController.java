@@ -310,7 +310,7 @@ public class UserController {
 			DocUser du = DocUser.findUserById(d.getCreaterId());
 			owner = du.getUserName();
 			ownerid = du.getUserId();
-			doc = "文件内容"; // TODO 文件内容
+			doc = String.valueOf(d.getDocChangeDate()); // TODO 文件内容
 			changedate = d.getDocChangeDate();
 			createdate = d.getDocCreateDate();
 		}
