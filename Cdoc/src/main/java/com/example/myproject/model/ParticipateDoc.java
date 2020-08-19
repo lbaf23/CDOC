@@ -22,7 +22,7 @@ public class ParticipateDoc {
 	 * @throws Exception
 	 */
 	public static ArrayList<String> findUserIdByDocId(String id) throws Exception {
-		String sql = "SELECT UserId FROM ParticipateDoc WHERE DocId = '"+id+"'";
+		String sql = "SELECT DISTINCT UserId FROM ParticipateDoc WHERE DocId = '"+id+"'";
 		ArrayList<String> res = new ArrayList<>();
 		ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 		while(rs.next()) {
@@ -80,7 +80,7 @@ public class ParticipateDoc {
 	 * @throws Exception
 	 */
 	public static ParticipateDoc findParticipateByDocIdUserId(String userId,String docId) {
-		String sql = "SELECT * FROM ParticipateDoc WHERE UserId = '"+userId+"'AND DocId='"+docId+"'";
+		String sql = "SELECT * FROM ParticipateDoc WHERE UserId = '"+userId+"' AND DocId='"+docId+"'";
 		try {
 			ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 			if(rs.next()) {

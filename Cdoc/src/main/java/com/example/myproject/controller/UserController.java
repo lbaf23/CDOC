@@ -1,7 +1,9 @@
 package com.example.myproject.controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -21,6 +23,7 @@ import com.example.myproject.model.ParticipateDoc;
 import com.example.myproject.model.Team;
 import com.example.myproject.model.ParticipateTeam;
 import com.example.myproject.service.DateOperate;
+import com.example.myproject.service.DocService;
 import com.example.myproject.service.FileOperate;
 import com.example.myproject.service.JavaMail;
 import com.example.myproject.service.TeamService;
@@ -406,6 +409,7 @@ public class UserController {
 			else
 				l = d.getDocCreateDate();
 			if(l.compareTo(lastDate) < 0) {
+				Collections.reverse(dlist);
 				res.add(new Document(lastDate,dlist,userId) );
 				dlist.clear();
 				lastDate = l;
@@ -679,7 +683,7 @@ public class UserController {
 		Doc d = Doc.findDocByDocId(docId);
 		Ret r = new Ret();
 		boolean res = true;
-		if(!d.getCreaterId().equals(userId)) { // 团队删除
+		if(!d.getBelongTo().equals("-1") && !d.getCreaterId().equals(userId)) { // 团队删除
 			res = TeamService.deleteFileFromTeam(d);
 		}
 		else {
@@ -852,8 +856,11 @@ public class UserController {
 	public Object userOpenFile(@RequestParam("userId") String userId,
 			@RequestParam("docId") String docId) {
 		Ret r = new Ret();
-		if(EditorDoc.findEditorDocByUserIdDocId(userId, docId) == null)
+		if(EditorDoc.findEditorDocByUserIdDocId(userId, docId) == null) {
 			r.setSuccess(EditorDoc.addEditorDoc(new EditorDoc(userId,docId,new Date(),false,false)) );
+			DocUser.setRecently(DocUser.findUserById(userId), docId);
+		}
+		Doc.updateDocTime(docId);
 		r.setSuccess(true);
 		return r;
 	}
@@ -1090,11 +1097,86 @@ public class UserController {
 		}
 		return r;
 	}
+	/**
+	 * 修改头像
+	 * @param userId
+	 * @param image
+	 * @return
+	 */
+	@RequestMapping(value = "/uploadUserHeadImage")
+	@ResponseBody
+	@CrossOrigin
+	public Object uploadUserHeadImage(@RequestParam("userId") String userId,
+			@RequestParam("image") String image) {
+		String p = DocUser.userImagePath+userId.substring(0,userId.indexOf("@"))+".jpg";
+		Ret r = new Ret();
+		if(FileOperate.writeBase64File(p, image.substring(image.indexOf(",")+1)) ) {
+			DocUser.changeUserInfo(userId,"UserImage",p);
+			r.setSuccess(true);
+		}
+		else {
+			r.setSuccess(false);
+		}
+		return r;
+	}
 	
 	
+	// Doc部分
+	/**
+	 * 导出文件
+	 * @param userId
+	 * @param fileContent
+	 * @param fileName
+	 * @return
+	 */
+	@RequestMapping(value = "/userUploadFile")
+	@ResponseBody
+	@CrossOrigin
+	public Object userUploadFile(@RequestParam("userId") String userId,
+			@RequestParam("fileContent") String fileContent,
+			@RequestParam("fileName") String fileName) {
+			
+		Ret r = new Ret();
+		String docId = Doc.getNextId();		
+		Doc dc = new Doc(docId,userId,Doc.getDocSrcByDocName(docId, fileName), new Date(),new Date(),Doc.getDocLogByDocName(docId, fileName),
+				false,new Date(),"-1");
+		if(Doc.addDoc(dc) ) {
+			DocUser.participateDoc(userId, docId, "admin");
+			DocUser.setRecently(DocUser.findUserById(userId), docId);
+			
+			String out = Doc.docPath+docId+"/"+fileName; // 文件输出的内容
+			
+			String docTmpDir = "DocSrc/temp/"+docId+"/"; // 创建临时路径
+			File dir = new File(docTmpDir);
+			if(!dir.exists())
+				dir.mkdir();
+			String htmlTmpDir = "DocSrc/temp/"+docId+"/html/";
+			File hdir = new File(htmlTmpDir);
+			if(!hdir.exists())
+				hdir.mkdir();
+			
+			DocService.saveDocFile("",dc,userId);
+			try {
+				FileOperate.writeBase64File(docTmpDir+fileName, fileContent.substring(fileContent.indexOf(",")+1)); // word解码保存
+				FileOperate.Word2003ToHtml(docTmpDir+fileName, htmlTmpDir+fileName);
+				FileOperate.replaceAllPicSrcToBase64(htmlTmpDir,fileName, out);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+			r.setSuccess(true);
+			r.setMessage("创建成功");
+			r.setResult(docId);
+		}
+		return r;
+	}
 	
 	
-	/// Team部分
+	// Team部分
+	/**
+	 * 展示团队部分
+	 * @param userId
+	 * @return
+	 */
 	@RequestMapping(value = "/showUserTeams")
 	@ResponseBody
 	@CrossOrigin

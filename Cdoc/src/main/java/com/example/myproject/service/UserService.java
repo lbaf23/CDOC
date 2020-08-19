@@ -73,7 +73,7 @@ public class UserService {
 	}
 	
 	/**
-	 * 获取某个用户浏览的文件
+	 * 获取某个用户最近的文件
 	 * @param user 用户类
 	 * @param order 排序方式：1 按照最后修改时间排序 2 按照创建时间排序 3 按照文件名排序
 	 * @param desc 是否按照时间近的到远的排序 true 从近到远 false 从远到近
@@ -85,6 +85,7 @@ public class UserService {
 			ArrayList<String> userRecently = user.getRecentlyDoc();
 			for(String str:userRecently) {
 				String sql = "SELECT * FROM Doc WHERE Deleted = 'false' AND DocId = '"+str+"'";
+				 
 				try {
 					ResultSet rs = Repository.getInstance().doSqlSelectStatement(sql);
 					if(rs.next()) {
@@ -183,7 +184,7 @@ public class UserService {
 			}
 		}
 		else { // 文件参与者 删除文件 退出文件参与
-			ParticipateDoc p = ParticipateDoc.findParticipateByDocIdUserId(du.getUserId(), doc.getDocId());
+			ParticipateDoc p = ParticipateDoc.findParticipateByDocIdUserId(du.getUserId(), doc.getDocId());			
 			if(ParticipateDoc.delParticipateDoc(p)) {
 				DocUser.cancelFavourite(du, doc.getDocId());
 				DocUser.cancelRecently(du, doc.getDocId());
@@ -235,60 +236,16 @@ public class UserService {
 		if(id.equals("0")) {
 			return true;
 		}
-		else if(id.equals("1")) {
-			String tp = Doc.tempPath + "t"+id+".doc";
-			try{
-				File f = new File(d.getDocSrc());
-				if( f.exists() )
-					f.delete();
-				String content = FileOperate.getFileContent(tp,false);				
-				FileOperate.writeFile(d.getDocSrc(), content);
-				return true;
-			} catch(Exception e) {
-				return false;
-			}
+		String tp = Doc.tempPath + "t"+id+".doc";
+		try{
+			File f = new File(d.getDocSrc());
+			if( f.exists() )
+				f.delete();
+			String content = FileOperate.getFileContent(tp,false);
+			return DocService.saveDocFile(content, d, null);
+		} catch(Exception e) {
+			return false;
 		}
-		else if(id.equals("2")) {
-			String tp = Doc.tempPath + "t"+id+".doc";
-			try{
-				String content = FileOperate.getFileContent(tp,false);
-				FileOperate.writeFile(d.getDocSrc(), content);
-				return true;
-			} catch(Exception e) {
-				return false;
-			}
-		}
-		else if(id.equals("3")) {
-			String tp = Doc.tempPath + "t"+id+".doc";
-			try{
-				String content = FileOperate.getFileContent(tp,false);				
-				FileOperate.writeFile(d.getDocSrc(), content);
-				return true;
-			} catch(Exception e) {
-				return false;
-			}
-		}
-		else if(id.equals("4")) {
-			String tp = Doc.tempPath + "t"+id+".doc";
-			try{
-				String content = FileOperate.getFileContent(tp,false);
-				FileOperate.writeFile(d.getDocSrc(), content);
-				return true;
-			} catch(Exception e) {
-				return false;
-			}
-		}
-		else if(id.equals("5")) {
-			String tp = Doc.tempPath + "t"+id+".doc";
-			try{
-				String content = FileOperate.getFileContent(tp,false);
-				FileOperate.writeFile(d.getDocSrc(), content);
-				return true;
-			} catch(Exception e) {
-				return false;
-			}
-		}
-		return false;
 	}
 	
 }

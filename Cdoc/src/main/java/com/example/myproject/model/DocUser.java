@@ -246,6 +246,9 @@ public class DocUser {
 		ArrayList<String> fav = user.getRecentlyDoc();
 		if(fav.contains(docId))
 			fav.remove(docId);
+		if(fav.size() > 20) {
+			fav.remove(0);
+		}
 		fav.add(docId);
 		return DocUser.changeUserInfo(user.userId, "RecentlyDoc", DocUser.listToString(fav) );
 	}

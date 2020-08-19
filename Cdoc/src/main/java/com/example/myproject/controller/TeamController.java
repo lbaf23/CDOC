@@ -31,6 +31,7 @@ public class TeamController {
 	// 展示的队伍
 	class TeamForShow{
 		String teamId;
+		String teamName;
 		String teamLeaderName;
 		String teamLeaderId;
 		Date teamCreateDate;
@@ -40,6 +41,7 @@ public class TeamController {
 			this.teamLeaderId = du.getUserId();
 			this.teamLeaderName = du.getUserName();
 			this.teamCreateDate = t.getTeamCreateDate();
+			this.teamName = t.getTeamName();
 		}
 		public String getTeamId() {
 			return teamId;
@@ -64,6 +66,12 @@ public class TeamController {
 		}
 		public void setTeamCreateDate(Date teamCreateDate) {
 			this.teamCreateDate = teamCreateDate;
+		}
+		public String getTeamName() {
+			return teamName;
+		}
+		public void setTeamName(String teamName) {
+			this.teamName = teamName;
 		}
 		
 	}

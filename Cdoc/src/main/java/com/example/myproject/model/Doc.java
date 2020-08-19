@@ -177,6 +177,10 @@ public class Doc {
 	public static boolean delDoc(String d) {
 		String sql = "UPDATE Doc SET Deleted = 'true' WHERE DocId ='" 
 				+ d+"'";
+		Doc doc = Doc.findDocByDocId(d);
+		File log = new File(doc.getDocLog());
+		if(log.exists())
+			log.delete();
 		updateDocTime(d);
 		return Repository.getInstance().doSqlUpdateStatement(sql);
 	}

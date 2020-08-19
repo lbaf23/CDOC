@@ -68,7 +68,6 @@ public class DocController {
 	 * @return
 	 */
 	public static boolean setdocLog(String userId, String docId) {
-		DocUser.setRecently(DocUser.findUserById(userId), docId);
 		return DocService.saveLog(Doc.findDocByDocId(docId), userId);
 	}
 	
@@ -125,6 +124,8 @@ public class DocController {
 		DocInfo di = new DocInfo();
 		
 		Doc d = Doc.findDocByDocId(docId);
+		if(d==null)
+			return r;
 		DocUser du = DocUser.findUserById(d.getCreaterId());
 		di.setDocId(docId);
 		di.setDocName(d.getDocName());
